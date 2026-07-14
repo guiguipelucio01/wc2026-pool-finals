@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WC2026 Office Pool</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--s1:#111113;--s2:#18181b;--border:#27272a;--border2:#3f3f46;
+  --text:#fafafa;--muted:#71717a;--dim:#3f3f46;
+  --green:#22c55e;--greenbg:rgba(34,197,94,.1);--greenbd:rgba(34,197,94,.25);
+  --gold:#eab308;--goldbg:rgba(234,179,8,.1);--goldbd:rgba(234,179,8,.25);
+  --blue:#3b82f6;--bluebg:rgba(59,130,246,.08);
+  --purple:#a855f7;--purplebg:rgba(168,85,247,.08);
+  --orange:#f97316;--red:#ef4444;--r:10px;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  font-size:14px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-card{background:var(--s2);border:1px solid var(--border);border-radius:16px;
+  padding:32px;width:100%;max-width:400px;text-align:center}
+.login-logo{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;color:var(--gold);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.login-prizes{display:flex;justify-content:center;gap:20px;margin-bottom:26px}
+.lp .lv{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+.lp .lk{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.login-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.06em;text-align:left;display:block;margin-bottom:5px}
+.login-inp{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:8px;
+  padding:11px 14px;color:var(--text);font-size:15px;font-family:'Inter',sans-serif;
+  outline:none;transition:border-color .15s;margin-bottom:12px}
+.login-inp:focus{border-color:var(--green)}
+.login-inp::placeholder{color:var(--dim)}
+.btn-login{width:100%;padding:13px;border-radius:8px;border:none;background:var(--green);
+  color:#052e10;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;
+  cursor:pointer;transition:filter .15s}
+.btn-login:hover{filter:brightness(1.08)}
+.btn-login:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;filter:none}
+.login-note{font-size:11px;color:var(--dim);margin-top:10px}
+.login-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+  color:var(--red);border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px;display:none}
+
+/* NAV */
+nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
+  display:none;align-items:center;padding:0 16px;gap:10px;position:sticky;top:0;z-index:200}
+.nav-logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;
+  display:flex;align-items:center;gap:7px}
+.nav-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.nav-sp{flex:1}
+.nav-user{font-size:12px;color:var(--muted)}
+.nav-user span{color:var(--text);font-weight:600}
+.nav-out{background:none;border:1px solid var(--border);color:var(--muted);
+  font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;
+  transition:all .15s}
+.nav-out:hover{border-color:var(--border2);color:var(--text)}
+
+/* TABS */
+.tabs{background:var(--s1);border-bottom:1px solid var(--border);display:none;
+  padding:0 16px;position:sticky;top:52px;z-index:100;overflow-x:auto}
+.tab{padding:11px 14px;font-size:13px;font-weight:500;color:var(--muted);
+  cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;
+  white-space:nowrap;display:inline-block}
+.tab.on{color:var(--text);border-bottom-color:var(--blue)}
+
+/* PAGES */
+.page{max-width:680px;margin:0 auto;padding:18px 14px 80px;display:none}
+
+/* STATUS */
+.status-bar{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sb-pill{background:var(--greenbg);border:1px solid var(--greenbd);color:var(--green);
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em}
+.sb-pill.closed{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red)}
+.sb-text{font-size:12px;color:var(--muted);flex:1}
+.sb-count{font-size:12px;font-weight:600;color:var(--text)}
+
+/* RAND BANNER */
+.rand-banner{background:linear-gradient(135deg,#0f1a0f,#0a1a08);border:1px solid var(--greenbd);
+  border-radius:var(--r);padding:11px 14px;margin-bottom:14px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rand-banner p{font-size:12px;color:var(--muted);flex:1}
+.rand-banner p strong{color:var(--text)}
+.btn-rand{background:var(--green);color:#052e10;border:none;border-radius:7px;
+  padding:8px 16px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;
+  cursor:pointer;white-space:nowrap;transition:filter .15s}
+.btn-rand:hover{filter:brightness(1.1)}
+
+/* MATCH */
+.match-hdr{margin:22px 0 8px}
+.match-chip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:6px}
+.chip-sf1{background:var(--bluebg);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.chip-sf2{background:var(--purplebg);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+.chip-3rd{background:var(--greenbg);color:var(--green);border:1px solid var(--greenbd)}
+.chip-fin{background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbd)}
+.chip-tou{background:rgba(249,115,22,.08);color:var(--orange);border:1px solid rgba(249,115,22,.3)}
+.match-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;line-height:1.1}
+.match-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.cat-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);padding:10px 0 4px}
+
+/* MARKET */
+.mkt{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  margin-bottom:7px;overflow:hidden;transition:border-color .15s}
+.mkt:hover{border-color:var(--border2)}
+.mkt.picked{border-color:rgba(34,197,94,.2)}
+.mkt-top{padding:11px 13px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.mkt-q{font-size:13px;font-weight:500;flex:1;line-height:1.4}
+.mkt-hint{font-size:11px;color:var(--muted);padding:2px 13px 7px}
+.mkt-pts{font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;padding:2px 8px;border-radius:6px}
+.pts-hi{background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbd)}
+.pts-med{background:var(--greenbg);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.pts-low{background:rgba(113,113,122,.1);color:var(--muted);border:1px solid var(--border)}
+
+/* OPTIONS */
+.opts{display:grid;gap:5px;padding:7px 13px 10px}
+.opts.g2{grid-template-columns:1fr 1fr}
+.opts.g3{grid-template-columns:1fr 1fr 1fr}
+.opt{border:1px solid var(--border);border-radius:7px;padding:8px 10px;
+  cursor:pointer;text-align:center;background:var(--s1);font-size:12px;
+  font-weight:500;color:var(--text);transition:all .12s;user-select:none;line-height:1.3}
+.opt:hover{border-color:var(--border2);background:var(--s2)}
+.opt.on{background:var(--greenbg);border-color:var(--greenbd);color:var(--green);font-weight:600}
+
+/* SCORE */
+.score-wrap{padding:7px 13px 10px;display:flex;align-items:center;gap:8px}
+.score-box{width:50px;background:var(--s1);border:1px solid var(--border);border-radius:7px;
+  padding:7px 0;font-size:21px;font-weight:700;text-align:center;color:var(--text);
+  outline:none;font-family:'Inter',sans-serif;transition:border-color .15s}
+.score-box:focus{border-color:var(--green)}
+.score-sep{font-size:17px;color:var(--dim);font-weight:700}
+.score-lbl{font-size:11px;color:var(--muted);margin-left:3px}
+
+/* SELECT */
+.sel-wrap{padding:7px 13px 10px}
+.sel-inp{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:7px;
+  padding:9px 32px 9px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;
+  outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2371717a' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center}
+.sel-inp:focus{border-color:var(--green)}
+.sel-inp option,.sel-inp optgroup{background:#18181b}
+
+/* SUBMIT */
+.submit-wrap{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:22px}
+.submit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.sg{background:var(--s1);border-radius:8px;padding:11px;text-align:center}
+.sg .sv{font-size:22px;font-weight:800;font-family:'Syne',sans-serif}
+.sg .sk{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+.btn-submit{width:100%;padding:13px;border-radius:var(--r);border:none;background:var(--green);
+  color:#052e10;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;
+  cursor:pointer;transition:all .15s}
+.btn-submit:hover{filter:brightness(1.08)}
+.btn-submit:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;filter:none}
+.submit-note{font-size:11px;color:var(--dim);text-align:center;margin-top:8px}
+
+/* MY PICKS */
+.picks-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:3px}
+.picks-sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+.pick-item{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 13px;margin-bottom:6px;display:flex;justify-content:space-between;
+  align-items:center;gap:12px;transition:border-color .1s}
+.pick-item:hover{border-color:var(--border2)}
+.pi-match{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.pi-q{font-size:13px;font-weight:500}
+.pi-pick{font-size:12px;color:var(--green);font-weight:600;margin-top:2px}
+.pi-result-row{display:flex;align-items:center;gap:6px;margin-top:3px}
+.pi-result{font-size:11px;color:var(--muted)}
+.badge-ok{background:var(--greenbg);color:var(--green);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px}
+.badge-no{background:rgba(239,68,68,.1);color:var(--red);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px}
+.pi-pts{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--gold);text-align:right}
+.pi-lbl{font-size:10px;color:var(--muted);text-align:right;margin-top:1px}
+.total-bar{background:var(--goldbg);border:1px solid var(--goldbd);border-radius:var(--r);
+  padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.total-bar .tv{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--gold)}
+
+/* LEADERBOARD */
+.lb-wrap{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.lb-hdr{display:grid;grid-template-columns:36px 1fr 70px 70px;gap:8px;padding:10px 14px;
+  font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+  background:var(--s1);border-bottom:1px solid var(--border)}
+.lb-row{display:grid;grid-template-columns:36px 1fr 70px 70px;gap:8px;
+  padding:12px 14px;border-bottom:1px solid var(--border);align-items:center;transition:background .1s}
+.lb-row:last-child{border-bottom:none}
+.lb-row:hover{background:#1c1c1f}
+.lb-row.me{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.15)}
+.lb-rank{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--dim)}
+.lb-rank.r1{color:var(--gold)}.lb-rank.r2{color:#a1a1aa}.lb-rank.r3{color:#b45309}
+.lb-name{font-weight:600;font-size:13px}
+.lb-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.lb-pts{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--green);text-align:right}
+.lb-prize{font-size:12px;font-weight:700;text-align:right}
+.lp1{color:var(--gold)}.lp2{color:#a1a1aa}.lp3{color:#b45309}
+.prize-box{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-top:12px}
+.prize-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.prize-row:last-child{border-bottom:none}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--green);color:#052e10;padding:10px 22px;border-radius:20px;
+  font-size:13px;font-weight:700;transition:transform .25s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* UTIL */
+.empty{text-align:center;padding:48px 20px;color:var(--dim)}
+.empty-ico{font-size:34px;margin-bottom:10px}
+.empty-t{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+
+@media(max-width:480px){.opts.g3{grid-template-columns:1fr 1fr}.match-title{font-size:17px}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">⚽ WC2026</div>
+    <div class="login-sub">Office Pool · Semi-Finals & Final · $800 in prizes</div>
+    <div class="login-prizes">
+      <div class="lp"><div class="lv" style="color:var(--gold)">$500</div><div class="lk">1st place</div></div>
+      <div class="lp"><div class="lv" style="color:#a1a1aa">$200</div><div class="lk">2nd place</div></div>
+      <div class="lp"><div class="lv" style="color:#b45309">$100</div><div class="lk">3rd place</div></div>
+    </div>
+    <div class="login-err" id="login-err"></div>
+    <label class="login-label">Your name</label>
+    <input class="login-inp" id="login-name" placeholder="e.g. Gui" maxlength="30" onkeydown="if(event.key==='Enter')doLogin()">
+    <label class="login-label">Email (optional)</label>
+    <input class="login-inp" id="login-email" placeholder="your@email.com" type="email">
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Enter the pool →</button>
+    <div class="login-note">Already registered? Just type your name again to see your picks.</div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<nav id="main-nav">
+  <div class="nav-logo"><div class="nav-dot"></div>WC2026 Pool</div>
+  <div class="nav-sp"></div>
+  <div class="nav-user">Hi, <span id="nav-name"></span></div>
+  <button class="nav-out" onclick="signOut()">Sign out</button>
+</nav>
+<div class="tabs" id="main-tabs">
+  <div class="tab on"  onclick="showTab('picks',this)">Place Picks</div>
+  <div class="tab"    onclick="showTab('mypicks',this)">My Picks</div>
+  <div class="tab"    onclick="showTab('lb',this)">Leaderboard</div>
+</div>
+
+<!-- PICKS TAB -->
+<div class="page" id="tab-picks">
+  <div class="status-bar">
+    <div class="sb-pill" id="sb-pill">OPEN</div>
+    <div class="sb-text">⏰ Deadline: 30 min before SF1 kickoff</div>
+    <div class="sb-count" id="sb-count">0 / 53 picked</div>
+  </div>
+  <div class="rand-banner">
+    <p><strong>Don't want to decide?</strong> Randomize all 53 markets instantly.</p>
+    <button class="btn-rand" onclick="randomAll()">🎲 Random all</button>
+  </div>
+
+  <!-- SF1 -->
+  <div class="match-hdr">
+    <div class="match-chip chip-sf1">Semi-Final 1 · Jul 14</div>
+    <div class="match-title">France vs Spain</div>
+    <div class="match-sub">Stade de France, Paris</div>
+  </div>
+  <div class="cat-label">Match result</div>
+  <div class="mkt" data-mid="sf1_01"><div class="mkt-top"><div class="mkt-q">Who wins?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="mkt-hint">Includes extra time & penalties</div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_01','France wins')">🇫🇷 France</div><div class="opt" onclick="pick(this,'sf1_01','Spain wins')">🇪🇸 Spain</div></div></div>
+  <div class="mkt" data-mid="sf1_02"><div class="mkt-top"><div class="mkt-q">Exact score after 90 min?</div><div class="mkt-pts pts-hi">10 pts</div></div><div class="mkt-hint">Extra time / penalties do NOT change this</div><div class="score-wrap"><input type="number" min="0" max="9" placeholder="0" id="sf1_02_h" class="score-box" oninput="scoreIn('sf1_02')"><div class="score-sep">—</div><input type="number" min="0" max="9" placeholder="0" id="sf1_02_a" class="score-box" oninput="scoreIn('sf1_02')"><div class="score-lbl">France — Spain</div></div></div>
+  <div class="mkt" data-mid="sf1_03"><div class="mkt-top"><div class="mkt-q">Will it go to extra time?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_03','Yes')">Yes — tied after 90 min</div><div class="opt" onclick="pick(this,'sf1_03','No')">No — decided in 90 min</div></div></div>
+  <div class="mkt" data-mid="sf1_04"><div class="mkt-top"><div class="mkt-q">Decided by penalties?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_04','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf1_04','No')">No</div></div></div>
+  <div class="cat-label">Goals</div>
+  <div class="mkt" data-mid="sf1_05"><div class="mkt-top"><div class="mkt-q">Will there be 3 or more goals?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="mkt-hint">Total goals in 90 min · 0, 1 or 2 = No</div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_05','Yes')">Yes — 3 or more</div><div class="opt" onclick="pick(this,'sf1_05','No')">No — 0, 1 or 2</div></div></div>
+  <div class="mkt" data-mid="sf1_06"><div class="mkt-top"><div class="mkt-q">Will both teams score?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_06','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf1_06','No')">No</div></div></div>
+  <div class="cat-label">First half</div>
+  <div class="mkt" data-mid="sf1_07"><div class="mkt-top"><div class="mkt-q">Goal in the first half?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_07','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf1_07','No')">No — 0-0 at HT</div></div></div>
+  <div class="mkt" data-mid="sf1_08"><div class="mkt-top"><div class="mkt-q">Half-time score?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="mkt-hint">France left · Spain right</div><div class="opts g3"><div class="opt" onclick="pick(this,'sf1_08','0-0')">0-0</div><div class="opt" onclick="pick(this,'sf1_08','1-0')">1-0</div><div class="opt" onclick="pick(this,'sf1_08','0-1')">0-1</div><div class="opt" onclick="pick(this,'sf1_08','1-1')">1-1</div><div class="opt" onclick="pick(this,'sf1_08','2-0')">2-0</div><div class="opt" onclick="pick(this,'sf1_08','0-2')">0-2</div><div class="opt" onclick="pick(this,'sf1_08','Other')">Other</div></div></div>
+  <div class="mkt" data-mid="sf1_09"><div class="mkt-top"><div class="mkt-q">Which half has more goals?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'sf1_09','1st')">1st half</div><div class="opt" onclick="pick(this,'sf1_09','Equal')">Equal</div><div class="opt" onclick="pick(this,'sf1_09','2nd')">2nd half</div></div></div>
+  <div class="cat-label">Players</div>
+  <div class="mkt" data-mid="sf1_10"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="mkt-hint">Own goals don't count · 0-0 = no points</div><div class="sel-wrap"><select class="sel-inp" id="sel-sf1_10" onchange="selPick('sf1_10',this)"><option value="">Pick a player...</option><optgroup label="🇫🇷 France"><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option></optgroup><optgroup label="🇪🇸 Spain"><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option></optgroup></select></div></div>
+  <div class="mkt" data-mid="sf1_11"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-sf1_11" onchange="selPick('sf1_11',this)"><option value="">Pick a player...</option><optgroup label="🇫🇷 France"><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option></optgroup><optgroup label="🇪🇸 Spain"><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option></optgroup></select></div></div>
+  <div class="mkt" data-mid="sf1_12"><div class="mkt-top"><div class="mkt-q">Red card shown?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_12','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf1_12','No')">No</div></div></div>
+
+  <!-- SF2 -->
+  <div class="match-hdr" style="margin-top:26px">
+    <div class="match-chip chip-sf2">Semi-Final 2 · Jul 15</div>
+    <div class="match-title">England vs Argentina</div>
+    <div class="match-sub">SoFi Stadium, Los Angeles</div>
+  </div>
+  <div class="cat-label">Match result</div>
+  <div class="mkt" data-mid="sf2_01"><div class="mkt-top"><div class="mkt-q">Who wins?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="mkt-hint">Includes extra time & penalties</div><div class="opts g2"><div class="opt" onclick="pick(this,'sf2_01','England wins')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England</div><div class="opt" onclick="pick(this,'sf2_01','Argentina wins')">🇦🇷 Argentina</div></div></div>
+  <div class="mkt" data-mid="sf2_02"><div class="mkt-top"><div class="mkt-q">Exact score after 90 min?</div><div class="mkt-pts pts-hi">10 pts</div></div><div class="mkt-hint">Extra time / penalties do NOT change this</div><div class="score-wrap"><input type="number" min="0" max="9" placeholder="0" id="sf2_02_h" class="score-box" oninput="scoreIn('sf2_02')"><div class="score-sep">—</div><input type="number" min="0" max="9" placeholder="0" id="sf2_02_a" class="score-box" oninput="scoreIn('sf2_02')"><div class="score-lbl">England — Argentina</div></div></div>
+  <div class="mkt" data-mid="sf2_03"><div class="mkt-top"><div class="mkt-q">Will it go to extra time?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf2_03','Yes')">Yes — tied after 90 min</div><div class="opt" onclick="pick(this,'sf2_03','No')">No — decided in 90 min</div></div></div>
+  <div class="mkt" data-mid="sf2_04"><div class="mkt-top"><div class="mkt-q">Decided by penalties?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf2_04','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf2_04','No')">No</div></div></div>
+  <div class="cat-label">Goals</div>
+  <div class="mkt" data-mid="sf2_05"><div class="mkt-top"><div class="mkt-q">Will there be 3 or more goals?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf2_05','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf2_05','No')">No</div></div></div>
+  <div class="mkt" data-mid="sf2_06"><div class="mkt-top"><div class="mkt-q">Will both teams score?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf2_06','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf2_06','No')">No</div></div></div>
+  <div class="cat-label">First half</div>
+  <div class="mkt" data-mid="sf2_07"><div class="mkt-top"><div class="mkt-q">Goal in the first half?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf2_07','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf2_07','No')">No</div></div></div>
+  <div class="mkt" data-mid="sf2_08"><div class="mkt-top"><div class="mkt-q">Half-time score?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="mkt-hint">England left · Argentina right</div><div class="opts g3"><div class="opt" onclick="pick(this,'sf2_08','0-0')">0-0</div><div class="opt" onclick="pick(this,'sf2_08','1-0')">1-0</div><div class="opt" onclick="pick(this,'sf2_08','0-1')">0-1</div><div class="opt" onclick="pick(this,'sf2_08','1-1')">1-1</div><div class="opt" onclick="pick(this,'sf2_08','2-0')">2-0</div><div class="opt" onclick="pick(this,'sf2_08','0-2')">0-2</div><div class="opt" onclick="pick(this,'sf2_08','Other')">Other</div></div></div>
+  <div class="mkt" data-mid="sf2_09"><div class="mkt-top"><div class="mkt-q">Which half has more goals?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'sf2_09','1st')">1st half</div><div class="opt" onclick="pick(this,'sf2_09','Equal')">Equal</div><div class="opt" onclick="pick(this,'sf2_09','2nd')">2nd half</div></div></div>
+  <div class="cat-label">Players</div>
+  <div class="mkt" data-mid="sf2_10"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-sf2_10" onchange="selPick('sf2_10',this)"><option value="">Pick a player...</option><optgroup label="🏴󠁧󠁢󠁥󠁮󠁧󠁿 England"><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option></optgroup><optgroup label="🇦🇷 Argentina"><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option></optgroup></select></div></div>
+  <div class="mkt" data-mid="sf2_11"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-sf2_11" onchange="selPick('sf2_11',this)"><option value="">Pick a player...</option><optgroup label="🏴󠁧󠁢󠁥󠁮󠁧󠁿 England"><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option></optgroup><optgroup label="🇦🇷 Argentina"><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option></optgroup></select></div></div>
+  <div class="mkt" data-mid="sf2_12"><div class="mkt-top"><div class="mkt-q">Red card shown?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf2_12','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf2_12','No')">No</div></div></div>
+
+  <!-- 3RD -->
+  <div class="match-hdr" style="margin-top:26px">
+    <div class="match-chip chip-3rd">3rd Place · Jul 18</div>
+    <div class="match-title">SF Losers TBD</div>
+    <div class="match-sub">Teams confirmed after semis</div>
+  </div>
+  <div class="cat-label">Match result</div>
+  <div class="mkt" data-mid="t3_01"><div class="mkt-top"><div class="mkt-q">Who wins the 3rd place match?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_01','SF1 Loser wins')">SF1 Loser</div><div class="opt" onclick="pick(this,'t3_01','SF2 Loser wins')">SF2 Loser</div></div></div>
+  <div class="mkt" data-mid="t3_02"><div class="mkt-top"><div class="mkt-q">Exact score after 90 min?</div><div class="mkt-pts pts-hi">10 pts</div></div><div class="score-wrap"><input type="number" min="0" max="9" placeholder="0" id="t3_02_h" class="score-box" oninput="scoreIn('t3_02')"><div class="score-sep">—</div><input type="number" min="0" max="9" placeholder="0" id="t3_02_a" class="score-box" oninput="scoreIn('t3_02')"></div></div>
+  <div class="mkt" data-mid="t3_03"><div class="mkt-top"><div class="mkt-q">Will it go to extra time?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_03','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_03','No')">No</div></div></div>
+  <div class="mkt" data-mid="t3_04"><div class="mkt-top"><div class="mkt-q">Decided by penalties?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_04','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_04','No')">No</div></div></div>
+  <div class="cat-label">Goals</div>
+  <div class="mkt" data-mid="t3_05"><div class="mkt-top"><div class="mkt-q">3 or more goals?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_05','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_05','No')">No</div></div></div>
+  <div class="mkt" data-mid="t3_06"><div class="mkt-top"><div class="mkt-q">Both teams score?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_06','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_06','No')">No</div></div></div>
+  <div class="cat-label">First half</div>
+  <div class="mkt" data-mid="t3_07"><div class="mkt-top"><div class="mkt-q">Goal in the first half?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_07','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_07','No')">No</div></div></div>
+  <div class="mkt" data-mid="t3_08"><div class="mkt-top"><div class="mkt-q">Half-time score?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'t3_08','0-0')">0-0</div><div class="opt" onclick="pick(this,'t3_08','1-0')">1-0</div><div class="opt" onclick="pick(this,'t3_08','0-1')">0-1</div><div class="opt" onclick="pick(this,'t3_08','1-1')">1-1</div><div class="opt" onclick="pick(this,'t3_08','2-0')">2-0</div><div class="opt" onclick="pick(this,'t3_08','0-2')">0-2</div><div class="opt" onclick="pick(this,'t3_08','Other')">Other</div></div></div>
+  <div class="mkt" data-mid="t3_09"><div class="mkt-top"><div class="mkt-q">Which half more goals?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'t3_09','1st')">1st half</div><div class="opt" onclick="pick(this,'t3_09','Equal')">Equal</div><div class="opt" onclick="pick(this,'t3_09','2nd')">2nd half</div></div></div>
+  <div class="cat-label">Players</div>
+  <div class="mkt" data-mid="t3_10"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_10" onchange="selPick('t3_10',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option></select></div></div>
+  <div class="mkt" data-mid="t3_11"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_11" onchange="selPick('t3_11',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>De Paul</option><option>Romero</option><option>Dibu Martínez</option></select></div></div>
+  <div class="mkt" data-mid="t3_12"><div class="mkt-top"><div class="mkt-q">Red card shown?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_12','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_12','No')">No</div></div></div>
+
+  <!-- FINAL -->
+  <div class="match-hdr" style="margin-top:26px">
+    <div class="match-chip chip-fin">🏆 World Cup Final · Jul 19</div>
+    <div class="match-title" style="color:var(--gold)">SF Winners TBD</div>
+    <div class="match-sub">MetLife Stadium, New Jersey</div>
+  </div>
+  <div class="cat-label">Match result</div>
+  <div class="mkt" data-mid="fin_01"><div class="mkt-top"><div class="mkt-q">Who wins the World Cup Final?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="mkt-hint">Includes extra time & penalties</div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_01','SF1 Winner wins')">SF1 Winner</div><div class="opt" onclick="pick(this,'fin_01','SF2 Winner wins')">SF2 Winner</div></div></div>
+  <div class="mkt" data-mid="fin_02"><div class="mkt-top"><div class="mkt-q">Exact score after 90 min?</div><div class="mkt-pts pts-hi">10 pts</div></div><div class="mkt-hint">Extra time / penalties do NOT change this</div><div class="score-wrap"><input type="number" min="0" max="9" placeholder="0" id="fin_02_h" class="score-box" oninput="scoreIn('fin_02')"><div class="score-sep">—</div><input type="number" min="0" max="9" placeholder="0" id="fin_02_a" class="score-box" oninput="scoreIn('fin_02')"></div></div>
+  <div class="mkt" data-mid="fin_03"><div class="mkt-top"><div class="mkt-q">Will it go to extra time?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_03','Yes')">Yes</div><div class="opt" onclick="pick(this,'fin_03','No')">No</div></div></div>
+  <div class="mkt" data-mid="fin_04"><div class="mkt-top"><div class="mkt-q">Decided by penalties?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_04','Yes')">Yes</div><div class="opt" onclick="pick(this,'fin_04','No')">No</div></div></div>
+  <div class="mkt" data-mid="fin_05"><div class="mkt-top"><div class="mkt-q">Red card shown?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_05','Yes')">Yes</div><div class="opt" onclick="pick(this,'fin_05','No')">No</div></div></div>
+  <div class="cat-label">Goals</div>
+  <div class="mkt" data-mid="fin_06"><div class="mkt-top"><div class="mkt-q">3 or more goals?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_06','Yes')">Yes</div><div class="opt" onclick="pick(this,'fin_06','No')">No</div></div></div>
+  <div class="mkt" data-mid="fin_07"><div class="mkt-top"><div class="mkt-q">Both teams score?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_07','Yes')">Yes</div><div class="opt" onclick="pick(this,'fin_07','No')">No</div></div></div>
+  <div class="cat-label">First half</div>
+  <div class="mkt" data-mid="fin_08"><div class="mkt-top"><div class="mkt-q">Goal in the first half?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_08','Yes')">Yes</div><div class="opt" onclick="pick(this,'fin_08','No')">No</div></div></div>
+  <div class="mkt" data-mid="fin_09"><div class="mkt-top"><div class="mkt-q">Half-time score?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'fin_09','0-0')">0-0</div><div class="opt" onclick="pick(this,'fin_09','1-0')">1-0</div><div class="opt" onclick="pick(this,'fin_09','0-1')">0-1</div><div class="opt" onclick="pick(this,'fin_09','1-1')">1-1</div><div class="opt" onclick="pick(this,'fin_09','2-0')">2-0</div><div class="opt" onclick="pick(this,'fin_09','0-2')">0-2</div><div class="opt" onclick="pick(this,'fin_09','Other')">Other</div></div></div>
+  <div class="mkt" data-mid="fin_10"><div class="mkt-top"><div class="mkt-q">Which half more goals?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'fin_10','1st')">1st half</div><div class="opt" onclick="pick(this,'fin_10','Equal')">Equal</div><div class="opt" onclick="pick(this,'fin_10','2nd')">2nd half</div></div></div>
+  <div class="cat-label">Players</div>
+  <div class="mkt" data-mid="fin_11"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-fin_11" onchange="selPick('fin_11',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option></select></div></div>
+  <div class="mkt" data-mid="fin_12"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-fin_12" onchange="selPick('fin_12',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>De Paul</option><option>Romero</option><option>Dibu Martínez</option></select></div></div>
+
+  <!-- TOURNAMENT -->
+  <div class="match-hdr" style="margin-top:26px">
+    <div class="match-chip chip-tou">Tournament Awards</div>
+    <div class="match-title">Individual Prizes</div>
+  </div>
+  <div class="mkt" data-mid="t_01"><div class="mkt-top"><div class="mkt-q">Who will be the World Cup champion?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="mkt-hint">The team that lifts the trophy</div><div class="opts g2"><div class="opt" onclick="pick(this,'t_01','France')">🇫🇷 France</div><div class="opt" onclick="pick(this,'t_01','Spain')">🇪🇸 Spain</div><div class="opt" onclick="pick(this,'t_01','England')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England</div><div class="opt" onclick="pick(this,'t_01','Argentina')">🇦🇷 Argentina</div></div></div>
+  <div class="mkt" data-mid="t_02"><div class="mkt-top"><div class="mkt-q">Golden Boot — top scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t_02','Mbappé')">Mbappé 🇫🇷</div><div class="opt" onclick="pick(this,'t_02','Messi')">Messi 🇦🇷</div><div class="opt" onclick="pick(this,'t_02','Kane')">Kane 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_02','Bellingham')">Bellingham 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_02','Dembélé')">Dembélé 🇫🇷</div><div class="opt" onclick="pick(this,'t_02','Other')">Other</div></div></div>
+  <div class="mkt" data-mid="t_03"><div class="mkt-top"><div class="mkt-q">Golden Ball — best player?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t_03','Mbappé')">Mbappé 🇫🇷</div><div class="opt" onclick="pick(this,'t_03','Messi')">Messi 🇦🇷</div><div class="opt" onclick="pick(this,'t_03','Kane')">Kane 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_03','Yamal')">Yamal 🇪🇸</div><div class="opt" onclick="pick(this,'t_03','Olise')">Olise 🇫🇷</div><div class="opt" onclick="pick(this,'t_03','Other')">Other</div></div></div>
+  <div class="mkt" data-mid="t_04"><div class="mkt-top"><div class="mkt-q">Best Young Player?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="mkt-hint">Best player aged 21 or under</div><div class="opts g2"><div class="opt" onclick="pick(this,'t_04','Yamal')">Yamal 🇪🇸</div><div class="opt" onclick="pick(this,'t_04','Doué')">Doué 🇫🇷</div><div class="opt" onclick="pick(this,'t_04','Cubarsí')">Cubarsí 🇪🇸</div><div class="opt" onclick="pick(this,'t_04',\"Nico O'Reilly\")">Nico O'Reilly 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_04','Manzambi')">Manzambi 🇨🇭</div><div class="opt" onclick="pick(this,'t_04','Other')">Other</div></div></div>
+  <div class="mkt" data-mid="t_05"><div class="mkt-top"><div class="mkt-q">Golden Glove — best goalkeeper?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t_05','Maignan')">Maignan 🇫🇷</div><div class="opt" onclick="pick(this,'t_05','Unai Simón')">Unai Simón 🇪🇸</div><div class="opt" onclick="pick(this,'t_05','Pickford')">Pickford 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_05','Dibu Martínez')">Dibu Martínez 🇦🇷</div><div class="opt" onclick="pick(this,'t_05','Courtois')">Courtois 🇧🇪</div><div class="opt" onclick="pick(this,'t_05','Other')">Other</div></div></div>
+
+  <!-- SUBMIT -->
+  <div class="submit-wrap">
+    <div class="submit-grid">
+      <div class="sg"><div class="sv" id="ss-mkt" style="color:var(--blue)">0</div><div class="sk">Picked</div></div>
+      <div class="sg"><div class="sv" id="ss-pts" style="color:var(--gold)">0</div><div class="sk">Max pts</div></div>
+      <div class="sg"><div class="sv" id="ss-left" style="color:var(--muted)">53</div><div class="sk">Left</div></div>
+    </div>
+    <button class="btn-submit" id="sbtn" onclick="doSubmit()">Submit my picks</button>
+    <div class="submit-note">Blank picks = random · No changes after submission</div>
+  </div>
+</div>
+
+<!-- MY PICKS TAB -->
+<div class="page" id="tab-mypicks">
+  <div id="mypicks-body"><div class="loading">Loading your picks...</div></div>
+</div>
+
+<!-- LEADERBOARD TAB -->
+<div class="page" id="tab-lb">
+  <div id="lb-body"><div class="loading">Loading leaderboard...</div></div>
+  <div class="prize-box" style="margin-top:12px">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Prizes · $800 total</div>
+    <div class="prize-row"><div>🥇 1st place</div><div style="font-weight:700;color:var(--gold)">$500</div></div>
+    <div class="prize-row"><div>🥈 2nd place</div><div style="font-weight:700;color:#a1a1aa">$200</div></div>
+    <div class="prize-row" style="border:none"><div>🥉 3rd place</div><div style="font-weight:700;color:#b45309">$100</div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://wyfomomcjevtjwqffbix.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rBtDmIo-1BlQDhncJpQefw_c5beVSjR';
+const {createClient} = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentPlayer = null;
+let submitted = false;
+const picks = {};
+
+const PTS = {
+  sf1_01:3,sf1_02:10,sf1_03:3,sf1_04:4,sf1_05:2,sf1_06:2,sf1_07:2,sf1_08:4,sf1_09:3,sf1_10:5,sf1_11:3,sf1_12:3,
+  sf2_01:3,sf2_02:10,sf2_03:3,sf2_04:4,sf2_05:2,sf2_06:2,sf2_07:2,sf2_08:4,sf2_09:3,sf2_10:5,sf2_11:3,sf2_12:3,
+  t3_01:3,t3_02:10,t3_03:3,t3_04:4,t3_05:2,t3_06:2,t3_07:2,t3_08:4,t3_09:3,t3_10:5,t3_11:3,t3_12:3,
+  fin_01:3,fin_02:10,fin_03:3,fin_04:4,fin_05:3,fin_06:2,fin_07:2,fin_08:2,fin_09:4,fin_10:3,fin_11:5,fin_12:3,
+  t_01:5,t_02:3,t_03:3,t_04:3,t_05:3
+};
+const TOTAL = 53;
+
+const ML = {
+  sf1_01:'SF1',sf1_02:'SF1',sf1_03:'SF1',sf1_04:'SF1',sf1_05:'SF1',sf1_06:'SF1',sf1_07:'SF1',sf1_08:'SF1',sf1_09:'SF1',sf1_10:'SF1',sf1_11:'SF1',sf1_12:'SF1',
+  sf2_01:'SF2',sf2_02:'SF2',sf2_03:'SF2',sf2_04:'SF2',sf2_05:'SF2',sf2_06:'SF2',sf2_07:'SF2',sf2_08:'SF2',sf2_09:'SF2',sf2_10:'SF2',sf2_11:'SF2',sf2_12:'SF2',
+  t3_01:'3RD',t3_02:'3RD',t3_03:'3RD',t3_04:'3RD',t3_05:'3RD',t3_06:'3RD',t3_07:'3RD',t3_08:'3RD',t3_09:'3RD',t3_10:'3RD',t3_11:'3RD',t3_12:'3RD',
+  fin_01:'FIN',fin_02:'FIN',fin_03:'FIN',fin_04:'FIN',fin_05:'FIN',fin_06:'FIN',fin_07:'FIN',fin_08:'FIN',fin_09:'FIN',fin_10:'FIN',fin_11:'FIN',fin_12:'FIN',
+  t_01:'AWARDS',t_02:'AWARDS',t_03:'AWARDS',t_04:'AWARDS',t_05:'AWARDS'
+};
+
+const QL = {
+  sf1_01:'Who wins?',sf1_02:'Exact score',sf1_03:'Extra time?',sf1_04:'Penalties?',sf1_05:'3+ goals?',sf1_06:'Both score?',sf1_07:'1st half goal?',sf1_08:'HT score',sf1_09:'More goals half',sf1_10:'First scorer',sf1_11:'Anytime scorer',sf1_12:'Red card?',
+  sf2_01:'Who wins?',sf2_02:'Exact score',sf2_03:'Extra time?',sf2_04:'Penalties?',sf2_05:'3+ goals?',sf2_06:'Both score?',sf2_07:'1st half goal?',sf2_08:'HT score',sf2_09:'More goals half',sf2_10:'First scorer',sf2_11:'Anytime scorer',sf2_12:'Red card?',
+  t3_01:'Who wins?',t3_02:'Exact score',t3_03:'Extra time?',t3_04:'Penalties?',t3_05:'3+ goals?',t3_06:'Both score?',t3_07:'1st half goal?',t3_08:'HT score',t3_09:'More goals half',t3_10:'First scorer',t3_11:'Anytime scorer',t3_12:'Red card?',
+  fin_01:'Who wins?',fin_02:'Exact score',fin_03:'Extra time?',fin_04:'Penalties?',fin_05:'Red card?',fin_06:'3+ goals?',fin_07:'Both score?',fin_08:'1st half goal?',fin_09:'HT score',fin_10:'More goals half',fin_11:'First scorer',fin_12:'Anytime scorer',
+  t_01:'Champion',t_02:'Golden Boot',t_03:'Golden Ball',t_04:'Best Young Player',t_05:'Golden Glove'
+};
+
+const RO = {
+  sf1_01:['France wins','Spain wins'],sf1_02:['1-0','0-1','1-1','2-0','0-2','2-1','1-2','0-0'],
+  sf1_03:['Yes','No'],sf1_04:['Yes','No'],sf1_05:['Yes','No'],sf1_06:['Yes','No'],sf1_07:['Yes','No'],
+  sf1_08:['0-0','1-0','0-1','1-1','2-0','0-2'],sf1_09:['1st','Equal','2nd'],
+  sf1_10:['Mbappé','Dembélé','Olise','Doué','Yamal','Oyarzabal','Merino','Olmo'],
+  sf1_11:['Mbappé','Dembélé','Yamal','Oyarzabal','Olmo','Olise'],sf1_12:['Yes','No'],
+  sf2_01:['England wins','Argentina wins'],sf2_02:['1-0','0-1','1-1','2-0','0-2','2-1','1-2','0-0'],
+  sf2_03:['Yes','No'],sf2_04:['Yes','No'],sf2_05:['Yes','No'],sf2_06:['Yes','No'],sf2_07:['Yes','No'],
+  sf2_08:['0-0','1-0','0-1','1-1','2-0','0-2'],sf2_09:['1st','Equal','2nd'],
+  sf2_10:['Bellingham','Kane','Saka','Foden','Messi','J.Álvarez','De Paul','Mac Allister'],
+  sf2_11:['Bellingham','Kane','Saka','Messi','J.Álvarez','Lautaro Martínez'],sf2_12:['Yes','No'],
+  t3_01:['SF1 Loser wins','SF2 Loser wins'],t3_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
+  t3_03:['Yes','No'],t3_04:['Yes','No'],t3_05:['Yes','No'],t3_06:['Yes','No'],t3_07:['Yes','No'],
+  t3_08:['0-0','1-0','0-1','1-1'],t3_09:['1st','Equal','2nd'],
+  t3_10:['Mbappé','Dembélé','Yamal','Bellingham','Kane','Messi','Olise'],
+  t3_11:['Mbappé','Yamal','Bellingham','Kane','Messi','Dembélé'],t3_12:['Yes','No'],
+  fin_01:['SF1 Winner wins','SF2 Winner wins'],fin_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
+  fin_03:['Yes','No'],fin_04:['Yes','No'],fin_05:['Yes','No'],fin_06:['Yes','No'],fin_07:['Yes','No'],fin_08:['Yes','No'],
+  fin_09:['0-0','1-0','0-1','1-1'],fin_10:['1st','Equal','2nd'],
+  fin_11:['Mbappé','Kane','Messi','Bellingham','Dembélé','Yamal'],
+  fin_12:['Mbappé','Kane','Messi','Bellingham','Saka'],
+  t_01:['France','Spain','England','Argentina'],
+  t_02:['Mbappé','Messi','Kane','Bellingham','Dembélé'],
+  t_03:['Mbappé','Messi','Kane','Yamal','Olise'],
+  t_04:['Yamal','Doué','Cubarsí',"Nico O'Reilly",'Manzambi'],
+  t_05:['Maignan','Unai Simón','Pickford','Dibu Martínez']
+};
+
+function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+
+// ── LOGIN
+async function doLogin(){
+  const name  = document.getElementById('login-name').value.trim();
+  const email = document.getElementById('login-email').value.trim();
+  const err   = document.getElementById('login-err');
+  const btn   = document.getElementById('btn-login');
+  if(!name){err.textContent='Please enter your name';err.style.display='block';return;}
+  err.style.display='none';
+  btn.disabled=true;btn.textContent='Entering...';
+  try{
+    await db.from('pool_players').upsert({name,email:email||null},{onConflict:'name',ignoreDuplicates:true});
+    currentPlayer=name;
+    localStorage.setItem('wc2026_player',name);
+    showApp();
+    await loadExistingPicks();
+  }catch(e){
+    err.textContent='Something went wrong. Try again.';err.style.display='block';
+    btn.disabled=false;btn.textContent='Enter the pool →';
+  }
+}
+
+function signOut(){
+  currentPlayer=null;localStorage.removeItem('wc2026_player');location.reload();
+}
+
+// ── SHOW APP
+function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-nav').style.display='flex';
+  document.getElementById('main-tabs').style.display='flex';
+  document.getElementById('nav-name').textContent=currentPlayer;
+  document.getElementById('tab-picks').style.display='block';
+}
+
+// ── TABS
+function showTab(id,el){
+  ['picks','mypicks','lb'].forEach(t=>document.getElementById('tab-'+t).style.display=t===id?'block':'none');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  if(id==='lb') loadLeaderboard();
+  if(id==='mypicks') renderMyPicks();
+}
+
+// ── PICK
+function pick(el,mid,val){
+  if(submitted)return;
+  picks[mid]=val;
+  el.closest('.opts').querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  el.closest('.mkt').classList.add('picked');
+  syncSummary();
+}
+
+function scoreIn(mid){
+  if(submitted)return;
+  const h=document.getElementById(mid+'_h'),a=document.getElementById(mid+'_a');
+  if(h.value!==''&&a.value!==''){picks[mid]=h.value+'-'+a.value;document.querySelector('[data-mid="'+mid+'"]').classList.add('picked');}
+  else delete picks[mid];
+  syncSummary();
+}
+
+function selPick(mid,sel){
+  if(submitted)return;
+  if(sel.value){picks[mid]=sel.value;document.querySelector('[data-mid="'+mid+'"]').classList.add('picked');}
+  else delete picks[mid];
+  syncSummary();
+}
+
+function syncSummary(){
+  const n=Object.keys(picks).length;
+  const pts=Object.keys(picks).reduce((s,m)=>s+(PTS[m]||0),0);
+  document.getElementById('ss-mkt').textContent=n;
+  document.getElementById('ss-pts').textContent=pts;
+  document.getElementById('ss-left').textContent=TOTAL-n;
+  document.getElementById('sb-count').textContent=n+' / '+TOTAL+' picked';
+}
+
+function randomAll(){
+  if(submitted)return;
+  Object.entries(RO).forEach(([mid,opts])=>{
+    const v=rnd(opts);picks[mid]=v;
+    const card=document.querySelector('[data-mid="'+mid+'"]');
+    if(!card)return;
+    card.querySelectorAll('.opt').forEach(b=>{
+      b.classList.remove('on');
+      const oc=b.getAttribute('onclick')||'';
+      if(oc.includes("'"+v+"'")||oc.includes('"'+v+'"'))b.classList.add('on');
+    });
+    if(/^\d-\d$/.test(v)){
+      const h=document.getElementById(mid+'_h'),a=document.getElementById(mid+'_a');
+      if(h){h.value=v[0];a.value=v[2];}
+    }
+    const sel=document.getElementById('sel-'+mid);
+    if(sel)sel.value=v;
+    card.classList.add('picked');
+  });
+  syncSummary();
+  toast('All 53 markets randomized 🎲');
+}
+
+// ── SUBMIT
+async function doSubmit(){
+  if(submitted){toast('Already submitted!');return;}
+  const btn=document.getElementById('sbtn');
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    // Auto-fill blanks with random before saving
+    Object.keys(RO).forEach(mid=>{if(!picks[mid])picks[mid]=rnd(RO[mid]);});
+    const rows=Object.entries(picks).map(([market_id,p])=>({player_name:currentPlayer,market_id,pick:p}));
+    const {error}=await db.from('pool_picks').upsert(rows,{onConflict:'player_name,market_id'});
+    if(error)throw error;
+    submitted=true;
+    btn.textContent='Picks submitted ✓';
+    btn.style.background='var(--border)';btn.style.color='var(--green)';
+    toast('Picks saved! Good luck 🏆');
+    setTimeout(()=>showTab('mypicks',document.querySelectorAll('.tab')[1]),1200);
+  }catch(e){
+    btn.disabled=false;btn.textContent='Submit my picks';toast('Error saving. Try again.');
+  }
+}
+
+// ── LOAD EXISTING
+async function loadExistingPicks(){
+  const {data}=await db.from('pool_picks').select('market_id,pick').eq('player_name',currentPlayer);
+  if(!data||!data.length)return;
+  submitted=true;
+  data.forEach(({market_id,pick:val})=>{
+    picks[market_id]=val;
+    const card=document.querySelector('[data-mid="'+market_id+'"]');
+    if(!card)return;
+    card.classList.add('picked');
+    card.querySelectorAll('.opt').forEach(b=>{
+      const oc=b.getAttribute('onclick')||'';
+      if(oc.includes("'"+val+"'")||oc.includes('"'+val+'"'))b.classList.add('on');
+    });
+    if(/^\d+-\d+$/.test(val)){
+      const p=val.split('-');
+      const h=document.getElementById(market_id+'_h'),a=document.getElementById(market_id+'_a');
+      if(h){h.value=p[0];a.value=p[1];}
+    }
+    const sel=document.getElementById('sel-'+market_id);
+    if(sel)sel.value=val;
+  });
+  syncSummary();
+  const btn=document.getElementById('sbtn');
+  btn.disabled=true;btn.textContent='Picks submitted ✓';
+  btn.style.background='var(--border)';btn.style.color='var(--green)';
+}
+
+// ── MY PICKS
+async function renderMyPicks(){
+  const body=document.getElementById('mypicks-body');
+  body.innerHTML='<div class="loading">Loading...</div>';
+  const {data:pd}=await db.from('pool_picks').select('market_id,pick').eq('player_name',currentPlayer).order('market_id');
+  const {data:rd}=await db.from('pool_results').select('market_id,result');
+  const rm={};(rd||[]).forEach(r=>rm[r.market_id]=r.result);
+  if(!pd||!pd.length){
+    body.innerHTML='<div class="empty"><div class="empty-ico">🎯</div><div class="empty-t">No picks yet</div><div class="empty-s">Go to Place Picks to get started</div></div>';
+    return;
+  }
+  const hasRes=Object.keys(rm).length>0;
+  let total=0;
+  let html='';
+  if(hasRes){
+    const earned=pd.reduce((s,{market_id,pick:v})=>{
+      if(rm[market_id]&&rm[market_id]===v)return s+(PTS[market_id]||0);return s;},0);
+    total=earned;
+    html+=`<div class="total-bar"><div><div style="font-size:12px;color:var(--muted)">Your total points</div><div class="picks-name">${currentPlayer}</div></div><div class="tv">${earned}</div></div>`;
+  }else{
+    html+=`<div class="picks-name">${currentPlayer}'s Picks</div><div class="picks-sub">${pd.length} markets submitted · Results pending</div>`;
+  }
+  pd.forEach(({market_id,pick:val})=>{
+    const pts=PTS[market_id]||0;
+    const res=rm[market_id];
+    const ok=res&&res===val;const bad=res&&res!==val;
+    if(ok)total+=0;// already counted above
+    html+=`<div class="pick-item">
+      <div>
+        <div class="pi-match">${ML[market_id]||''}</div>
+        <div class="pi-q">${QL[market_id]||market_id}</div>
+        <div class="pi-pick">${val}</div>
+        ${res?`<div class="pi-result-row"><div class="pi-result">Result: ${res}</div>${ok?'<div class="badge-ok">✓ Correct</div>':'<div class="badge-no">✗ Wrong</div>'}</div>`:''}
+      </div>
+      <div>
+        <div class="pi-pts">${res?(ok?'+'+pts:'0'):pts}</div>
+        <div class="pi-lbl">${res?'pts':'pts if correct'}</div>
+      </div>
+    </div>`;
+  });
+  body.innerHTML=html;
+}
+
+// ── LEADERBOARD
+async function loadLeaderboard(){
+  const body=document.getElementById('lb-body');
+  body.innerHTML='<div class="loading">Loading...</div>';
+  const [{data:pd},{data:rd},{data:pl}]=await Promise.all([
+    db.from('pool_picks').select('player_name,market_id,pick'),
+    db.from('pool_results').select('market_id,result'),
+    db.from('pool_players').select('name').order('created_at')
+  ]);
+  const rm={};(rd||[]).forEach(r=>rm[r.market_id]=r.result);
+  const hasRes=Object.keys(rm).length>0;
+  const byP={};
+  (pd||[]).forEach(({player_name,market_id,pick})=>{
+    if(!byP[player_name])byP[player_name]=[];
+    byP[player_name].push({market_id,pick});
+  });
+  const scored=(pl||[]).map(({name})=>{
+    const mp=byP[name]||[];
+    const pts=mp.reduce((s,{market_id,pick})=>{
+      if(rm[market_id]&&rm[market_id]===pick)return s+(PTS[market_id]||0);return s;},0);
+    return {name,pts,count:mp.length};
+  }).sort((a,b)=>b.pts-a.pts||b.count-a.count);
+  if(!scored.length){
+    body.innerHTML='<div class="empty"><div class="empty-ico">🏆</div><div class="empty-t">No players yet</div></div>';
+    return;
+  }
+  const PZ={0:'🥇 $500',1:'🥈 $200',2:'🥉 $100'};
+  const PC={0:'lp1',1:'lp2',2:'lp3'};
+  const RC={0:'r1',1:'r2',2:'r3'};
+  let html='<div class="lb-wrap"><div class="lb-hdr"><div>#</div><div>Player</div><div style="text-align:right">Points</div><div style="text-align:right">Prize</div></div>';
+  scored.forEach(({name,pts,count},i)=>{
+    const me=name===currentPlayer;
+    html+=`<div class="lb-row${me?' me':''}">
+      <div class="lb-rank ${RC[i]||''}">${i+1}</div>
+      <div><div class="lb-name">${name}${me?' 👈':''}</div><div class="lb-sub">${count} picks${!hasRes?' · pending':''}</div></div>
+      <div class="lb-pts">${hasRes?pts:'—'}</div>
+      <div class="lb-prize ${PC[i]||''}">${PZ[i]||'—'}</div>
+    </div>`;
+  });
+  html+='</div>';
+  body.innerHTML=html;
+}
+
+// ── TOAST
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── AUTO-LOGIN
+window.addEventListener('DOMContentLoaded',async()=>{
+  const saved=localStorage.getItem('wc2026_player');
+  if(saved){currentPlayer=saved;showApp();await loadExistingPicks();}
+});
+</script>
+</body>
+</html>
