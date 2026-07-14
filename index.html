@@ -44,6 +44,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
 .login-note{font-size:11px;color:var(--dim);margin-top:10px}
 .login-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
   color:var(--red);border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px;display:none}
+.login-ok{background:var(--greenbg);border:1px solid var(--greenbd);
+  color:var(--green);border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px;display:none}
+.login-note a{color:var(--green);text-decoration:none;font-weight:600}
+.login-note a:hover{text-decoration:underline}
 
 /* NAV */
 nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
@@ -94,7 +98,6 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
 .match-hdr{margin:22px 0 8px}
 .match-chip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;
   letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:6px}
-.chip-sf1{background:var(--bluebg);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
 .chip-sf2{background:var(--purplebg);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
 .chip-3rd{background:var(--greenbg);color:var(--green);border:1px solid var(--greenbd)}
 .chip-fin{background:var(--goldbg);color:var(--gold);border:1px solid var(--goldbd)}
@@ -106,7 +109,7 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
 
 /* MARKET */
 .mkt{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
-  margin-bottom:7px;overflow:hidden;transition:border-color .15s}
+  margin-bottom:7px;transition:border-color .15s}
 .mkt:hover{border-color:var(--border2)}
 .mkt.picked{border-color:rgba(34,197,94,.2)}
 .mkt-top{padding:11px 13px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
@@ -252,12 +255,21 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
       <div class="lp"><div class="lv" style="color:#b45309">$100</div><div class="lk">3rd place</div></div>
     </div>
     <div class="login-err" id="login-err"></div>
-    <label class="login-label">Your name</label>
-    <input class="login-inp" id="login-name" placeholder="e.g. Gui" maxlength="30" onkeydown="if(event.key==='Enter')doLogin()">
-    <label class="login-label">Email (optional)</label>
+    <div class="login-ok" id="login-ok"></div>
+    <div id="login-name-field">
+      <label class="login-label">Your name</label>
+      <input class="login-inp" id="login-name" placeholder="e.g. Gui" maxlength="30">
+    </div>
+    <label class="login-label">Email</label>
     <input class="login-inp" id="login-email" placeholder="your@email.com" type="email">
-    <button class="btn-login" id="btn-login" onclick="doLogin()">Enter the pool →</button>
-    <div class="login-note">Already registered? Just type your name again to see your picks.</div>
+    <label class="login-label">Password</label>
+    <input class="login-inp" id="login-pass" placeholder="At least 6 characters" type="password" maxlength="72" onkeydown="if(event.key==='Enter')doAuth()">
+    <button class="btn-login" id="btn-login" onclick="doAuth()">Create account →</button>
+    <div class="login-note">
+      <span id="login-toggle-txt">Already registered?</span>
+      <a href="#" id="login-toggle" onclick="toggleAuthMode(event)">Sign in</a>
+      · <a href="#" onclick="forgotPassword(event)">Forgot password?</a>
+    </div>
   </div>
 </div>
 
@@ -278,39 +290,16 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
 <div class="page" id="tab-picks">
   <div class="status-bar">
     <div class="sb-pill" id="sb-pill">OPEN</div>
-    <div class="sb-text">⏰ Deadline: 30 min before SF1 kickoff</div>
-    <div class="sb-count" id="sb-count">0 / 53 picked</div>
+    <div class="sb-text">⏰ Deadline: 30 min before SF2 kickoff</div>
+    <div class="sb-count" id="sb-count">0 / 41 picked</div>
   </div>
   <div class="rand-banner">
-    <p><strong>Don't want to decide?</strong> Randomize all 53 markets instantly.</p>
+    <p><strong>Don't want to decide?</strong> Randomize all 41 markets instantly.</p>
     <button class="btn-rand" onclick="randomAll()">🎲 Random all</button>
   </div>
 
-  <!-- SF1 -->
-  <div class="match-hdr">
-    <div class="match-chip chip-sf1">Semi-Final 1 · Jul 14</div>
-    <div class="match-title">France vs Spain</div>
-    <div class="match-sub">Stade de France, Paris</div>
-  </div>
-  <div class="cat-label">Match result</div>
-  <div class="mkt" data-mid="sf1_01"><div class="mkt-top"><div class="mkt-q">Who wins?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="mkt-hint">Includes extra time & penalties</div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_01','France wins')">🇫🇷 France</div><div class="opt" onclick="pick(this,'sf1_01','Spain wins')">🇪🇸 Spain</div></div></div>
-  <div class="mkt" data-mid="sf1_02"><div class="mkt-top"><div class="mkt-q">Exact score after 90 min?</div><div class="mkt-pts pts-hi">10 pts</div></div><div class="mkt-hint">Extra time / penalties do NOT change this</div><div class="score-wrap"><input type="number" min="0" max="9" placeholder="0" id="sf1_02_h" class="score-box" oninput="scoreIn('sf1_02')"><div class="score-sep">—</div><input type="number" min="0" max="9" placeholder="0" id="sf1_02_a" class="score-box" oninput="scoreIn('sf1_02')"><div class="score-lbl">France — Spain</div></div></div>
-  <div class="mkt" data-mid="sf1_03"><div class="mkt-top"><div class="mkt-q">Will it go to extra time?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_03','Yes')">Yes — tied after 90 min</div><div class="opt" onclick="pick(this,'sf1_03','No')">No — decided in 90 min</div></div></div>
-  <div class="mkt" data-mid="sf1_04"><div class="mkt-top"><div class="mkt-q">Decided by penalties?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_04','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf1_04','No')">No</div></div></div>
-  <div class="cat-label">Goals</div>
-  <div class="mkt" data-mid="sf1_05"><div class="mkt-top"><div class="mkt-q">Will there be 3 or more goals?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="mkt-hint">Total goals in 90 min · 0, 1 or 2 = No</div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_05','Yes')">Yes — 3 or more</div><div class="opt" onclick="pick(this,'sf1_05','No')">No — 0, 1 or 2</div></div></div>
-  <div class="mkt" data-mid="sf1_06"><div class="mkt-top"><div class="mkt-q">Will both teams score?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_06','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf1_06','No')">No</div></div></div>
-  <div class="cat-label">First half</div>
-  <div class="mkt" data-mid="sf1_07"><div class="mkt-top"><div class="mkt-q">Goal in the first half?</div><div class="mkt-pts pts-low">2 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_07','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf1_07','No')">No — 0-0 at HT</div></div></div>
-  <div class="mkt" data-mid="sf1_08"><div class="mkt-top"><div class="mkt-q">Half-time score?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="mkt-hint">France left · Spain right</div><div class="opts g3"><div class="opt" onclick="pick(this,'sf1_08','0-0')">0-0</div><div class="opt" onclick="pick(this,'sf1_08','1-0')">1-0</div><div class="opt" onclick="pick(this,'sf1_08','0-1')">0-1</div><div class="opt" onclick="pick(this,'sf1_08','1-1')">1-1</div><div class="opt" onclick="pick(this,'sf1_08','2-0')">2-0</div><div class="opt" onclick="pick(this,'sf1_08','0-2')">0-2</div><div class="opt" onclick="pick(this,'sf1_08','Other')">Other</div></div></div>
-  <div class="mkt" data-mid="sf1_09"><div class="mkt-top"><div class="mkt-q">Which half has more goals?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'sf1_09','1st')">1st half</div><div class="opt" onclick="pick(this,'sf1_09','Equal')">Equal</div><div class="opt" onclick="pick(this,'sf1_09','2nd')">2nd half</div></div></div>
-  <div class="cat-label">Players</div>
-  <div class="mkt" data-mid="sf1_10"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="mkt-hint">Own goals don't count · 0-0 = no points</div><div class="sel-wrap"><select class="sel-inp" id="sel-sf1_10" onchange="selPick('sf1_10',this)"><option value="">Pick a player...</option><optgroup label="🇫🇷 France"><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option></optgroup><optgroup label="🇪🇸 Spain"><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option></optgroup></select></div></div>
-  <div class="mkt" data-mid="sf1_11"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-sf1_11" onchange="selPick('sf1_11',this)"><option value="">Pick a player...</option><optgroup label="🇫🇷 France"><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option></optgroup><optgroup label="🇪🇸 Spain"><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option></optgroup></select></div></div>
-  <div class="mkt" data-mid="sf1_12"><div class="mkt-top"><div class="mkt-q">Red card shown?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'sf1_12','Yes')">Yes</div><div class="opt" onclick="pick(this,'sf1_12','No')">No</div></div></div>
-
   <!-- SF2 -->
-  <div class="match-hdr" style="margin-top:26px">
+  <div class="match-hdr">
     <div class="match-chip chip-sf2">Semi-Final 2 · Jul 15</div>
     <div class="match-title">England vs Argentina</div>
     <div class="match-sub">SoFi Stadium, Los Angeles</div>
@@ -335,11 +324,11 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
   <!-- 3RD -->
   <div class="match-hdr" style="margin-top:26px">
     <div class="match-chip chip-3rd">3rd Place · Jul 18</div>
-    <div class="match-title">SF Losers TBD</div>
-    <div class="match-sub">Teams confirmed after semis</div>
+    <div class="match-title">France vs SF2 Loser</div>
+    <div class="match-sub">Other team confirmed after SF2</div>
   </div>
   <div class="cat-label">Match result</div>
-  <div class="mkt" data-mid="t3_01"><div class="mkt-top"><div class="mkt-q">Who wins the 3rd place match?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_01','SF1 Loser wins')">SF1 Loser</div><div class="opt" onclick="pick(this,'t3_01','SF2 Loser wins')">SF2 Loser</div></div></div>
+  <div class="mkt" data-mid="t3_01"><div class="mkt-top"><div class="mkt-q">Who wins the 3rd place match?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_01','France wins')">🇫🇷 France</div><div class="opt" onclick="pick(this,'t3_01','SF2 Loser wins')">SF2 Loser</div></div></div>
   <div class="mkt" data-mid="t3_02"><div class="mkt-top"><div class="mkt-q">Exact score after 90 min?</div><div class="mkt-pts pts-hi">10 pts</div></div><div class="score-wrap"><input type="number" min="0" max="9" placeholder="0" id="t3_02_h" class="score-box" oninput="scoreIn('t3_02')"><div class="score-sep">—</div><input type="number" min="0" max="9" placeholder="0" id="t3_02_a" class="score-box" oninput="scoreIn('t3_02')"></div></div>
   <div class="mkt" data-mid="t3_03"><div class="mkt-top"><div class="mkt-q">Will it go to extra time?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_03','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_03','No')">No</div></div></div>
   <div class="mkt" data-mid="t3_04"><div class="mkt-top"><div class="mkt-q">Decided by penalties?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_04','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_04','No')">No</div></div></div>
@@ -351,18 +340,18 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
   <div class="mkt" data-mid="t3_08"><div class="mkt-top"><div class="mkt-q">Half-time score?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'t3_08','0-0')">0-0</div><div class="opt" onclick="pick(this,'t3_08','1-0')">1-0</div><div class="opt" onclick="pick(this,'t3_08','0-1')">0-1</div><div class="opt" onclick="pick(this,'t3_08','1-1')">1-1</div><div class="opt" onclick="pick(this,'t3_08','2-0')">2-0</div><div class="opt" onclick="pick(this,'t3_08','0-2')">0-2</div><div class="opt" onclick="pick(this,'t3_08','Other')">Other</div></div></div>
   <div class="mkt" data-mid="t3_09"><div class="mkt-top"><div class="mkt-q">Which half more goals?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'t3_09','1st')">1st half</div><div class="opt" onclick="pick(this,'t3_09','Equal')">Equal</div><div class="opt" onclick="pick(this,'t3_09','2nd')">2nd half</div></div></div>
   <div class="cat-label">Players</div>
-  <div class="mkt" data-mid="t3_10"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_10" onchange="selPick('t3_10',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option></select></div></div>
-  <div class="mkt" data-mid="t3_11"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_11" onchange="selPick('t3_11',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>De Paul</option><option>Romero</option><option>Dibu Martínez</option></select></div></div>
+  <div class="mkt" data-mid="t3_10"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_10" onchange="selPick('t3_10',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option></select></div></div>
+  <div class="mkt" data-mid="t3_11"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_11" onchange="selPick('t3_11',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>De Paul</option><option>Romero</option><option>Dibu Martínez</option></select></div></div>
   <div class="mkt" data-mid="t3_12"><div class="mkt-top"><div class="mkt-q">Red card shown?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_12','Yes')">Yes</div><div class="opt" onclick="pick(this,'t3_12','No')">No</div></div></div>
 
   <!-- FINAL -->
   <div class="match-hdr" style="margin-top:26px">
     <div class="match-chip chip-fin">🏆 World Cup Final · Jul 19</div>
-    <div class="match-title" style="color:var(--gold)">SF Winners TBD</div>
-    <div class="match-sub">MetLife Stadium, New Jersey</div>
+    <div class="match-title" style="color:var(--gold)">Spain vs SF2 Winner</div>
+    <div class="match-sub">Other team confirmed after SF2 · MetLife Stadium, New Jersey</div>
   </div>
   <div class="cat-label">Match result</div>
-  <div class="mkt" data-mid="fin_01"><div class="mkt-top"><div class="mkt-q">Who wins the World Cup Final?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="mkt-hint">Includes extra time & penalties</div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_01','SF1 Winner wins')">SF1 Winner</div><div class="opt" onclick="pick(this,'fin_01','SF2 Winner wins')">SF2 Winner</div></div></div>
+  <div class="mkt" data-mid="fin_01"><div class="mkt-top"><div class="mkt-q">Who wins the World Cup Final?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="mkt-hint">Includes extra time & penalties</div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_01','Spain wins')">🇪🇸 Spain</div><div class="opt" onclick="pick(this,'fin_01','SF2 Winner wins')">SF2 Winner</div></div></div>
   <div class="mkt" data-mid="fin_02"><div class="mkt-top"><div class="mkt-q">Exact score after 90 min?</div><div class="mkt-pts pts-hi">10 pts</div></div><div class="mkt-hint">Extra time / penalties do NOT change this</div><div class="score-wrap"><input type="number" min="0" max="9" placeholder="0" id="fin_02_h" class="score-box" oninput="scoreIn('fin_02')"><div class="score-sep">—</div><input type="number" min="0" max="9" placeholder="0" id="fin_02_a" class="score-box" oninput="scoreIn('fin_02')"></div></div>
   <div class="mkt" data-mid="fin_03"><div class="mkt-top"><div class="mkt-q">Will it go to extra time?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_03','Yes')">Yes</div><div class="opt" onclick="pick(this,'fin_03','No')">No</div></div></div>
   <div class="mkt" data-mid="fin_04"><div class="mkt-top"><div class="mkt-q">Decided by penalties?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'fin_04','Yes')">Yes</div><div class="opt" onclick="pick(this,'fin_04','No')">No</div></div></div>
@@ -375,15 +364,15 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
   <div class="mkt" data-mid="fin_09"><div class="mkt-top"><div class="mkt-q">Half-time score?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'fin_09','0-0')">0-0</div><div class="opt" onclick="pick(this,'fin_09','1-0')">1-0</div><div class="opt" onclick="pick(this,'fin_09','0-1')">0-1</div><div class="opt" onclick="pick(this,'fin_09','1-1')">1-1</div><div class="opt" onclick="pick(this,'fin_09','2-0')">2-0</div><div class="opt" onclick="pick(this,'fin_09','0-2')">0-2</div><div class="opt" onclick="pick(this,'fin_09','Other')">Other</div></div></div>
   <div class="mkt" data-mid="fin_10"><div class="mkt-top"><div class="mkt-q">Which half more goals?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'fin_10','1st')">1st half</div><div class="opt" onclick="pick(this,'fin_10','Equal')">Equal</div><div class="opt" onclick="pick(this,'fin_10','2nd')">2nd half</div></div></div>
   <div class="cat-label">Players</div>
-  <div class="mkt" data-mid="fin_11"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-fin_11" onchange="selPick('fin_11',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option></select></div></div>
-  <div class="mkt" data-mid="fin_12"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-fin_12" onchange="selPick('fin_12',this)"><option value="">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>De Paul</option><option>Romero</option><option>Dibu Martínez</option></select></div></div>
+  <div class="mkt" data-mid="fin_11"><div class="mkt-top"><div class="mkt-q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-fin_11" onchange="selPick('fin_11',this)"><option value="">Pick a player...</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Cucurella</option><option>Le Normand</option><option>Carvajal</option><option>Unai Simón</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option></select></div></div>
+  <div class="mkt" data-mid="fin_12"><div class="mkt-top"><div class="mkt-q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-fin_12" onchange="selPick('fin_12',this)"><option value="">Pick a player...</option><option>Yamal</option><option>Oyarzabal</option><option>Merino</option><option>Olmo</option><option>Pedri</option><option>Rodri</option><option>Nico Williams</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>De Paul</option><option>Romero</option><option>Dibu Martínez</option></select></div></div>
 
   <!-- TOURNAMENT -->
   <div class="match-hdr" style="margin-top:26px">
     <div class="match-chip chip-tou">Tournament Awards</div>
     <div class="match-title">Individual Prizes</div>
   </div>
-  <div class="mkt" data-mid="t_01"><div class="mkt-top"><div class="mkt-q">Who will be the World Cup champion?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="mkt-hint">The team that lifts the trophy</div><div class="opts g2"><div class="opt" onclick="pick(this,'t_01','France')">🇫🇷 France</div><div class="opt" onclick="pick(this,'t_01','Spain')">🇪🇸 Spain</div><div class="opt" onclick="pick(this,'t_01','England')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England</div><div class="opt" onclick="pick(this,'t_01','Argentina')">🇦🇷 Argentina</div></div></div>
+  <div class="mkt" data-mid="t_01"><div class="mkt-top"><div class="mkt-q">Who will be the World Cup champion?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="mkt-hint">The team that lifts the trophy</div><div class="opts g2"><div class="opt" onclick="pick(this,'t_01','Spain')">🇪🇸 Spain</div><div class="opt" onclick="pick(this,'t_01','England')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England</div><div class="opt" onclick="pick(this,'t_01','Argentina')">🇦🇷 Argentina</div></div></div>
   <div class="mkt" data-mid="t_02"><div class="mkt-top"><div class="mkt-q">Golden Boot — top scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t_02','Mbappé')">Mbappé 🇫🇷</div><div class="opt" onclick="pick(this,'t_02','Messi')">Messi 🇦🇷</div><div class="opt" onclick="pick(this,'t_02','Kane')">Kane 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_02','Bellingham')">Bellingham 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_02','Dembélé')">Dembélé 🇫🇷</div><div class="opt" onclick="pick(this,'t_02','Other')">Other</div></div></div>
   <div class="mkt" data-mid="t_03"><div class="mkt-top"><div class="mkt-q">Golden Ball — best player?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t_03','Mbappé')">Mbappé 🇫🇷</div><div class="opt" onclick="pick(this,'t_03','Messi')">Messi 🇦🇷</div><div class="opt" onclick="pick(this,'t_03','Kane')">Kane 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_03','Yamal')">Yamal 🇪🇸</div><div class="opt" onclick="pick(this,'t_03','Olise')">Olise 🇫🇷</div><div class="opt" onclick="pick(this,'t_03','Other')">Other</div></div></div>
   <div class="mkt" data-mid="t_04"><div class="mkt-top"><div class="mkt-q">Best Young Player?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="mkt-hint">Best player aged 21 or under</div><div class="opts g2"><div class="opt" onclick="pick(this,'t_04','Yamal')">Yamal 🇪🇸</div><div class="opt" onclick="pick(this,'t_04','Doué')">Doué 🇫🇷</div><div class="opt" onclick="pick(this,'t_04','Cubarsí')">Cubarsí 🇪🇸</div><div class="opt" onclick="pick(this,'t_04',\"Nico O'Reilly\")">Nico O'Reilly 🏴󠁧󠁢󠁥󠁮󠁧󠁿</div><div class="opt" onclick="pick(this,'t_04','Manzambi')">Manzambi 🇨🇭</div><div class="opt" onclick="pick(this,'t_04','Other')">Other</div></div></div>
@@ -394,7 +383,7 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
     <div class="submit-grid">
       <div class="sg"><div class="sv" id="ss-mkt" style="color:var(--blue)">0</div><div class="sk">Picked</div></div>
       <div class="sg"><div class="sv" id="ss-pts" style="color:var(--gold)">0</div><div class="sk">Max pts</div></div>
-      <div class="sg"><div class="sv" id="ss-left" style="color:var(--muted)">53</div><div class="sk">Left</div></div>
+      <div class="sg"><div class="sv" id="ss-left" style="color:var(--muted)">41</div><div class="sk">Left</div></div>
     </div>
     <button class="btn-submit" id="sbtn" onclick="doSubmit()">Submit my picks</button>
     <div class="submit-note">Blank picks = random · No changes after submission</div>
@@ -425,21 +414,21 @@ const SUPABASE_KEY = 'sb_publishable_rBtDmIo-1BlQDhncJpQefw_c5beVSjR';
 const {createClient} = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let currentUser = null;
 let currentPlayer = null;
 let submitted = false;
+let authMode = 'signup'; // 'signup' | 'signin'
 const picks = {};
 
 const PTS = {
-  sf1_01:3,sf1_02:10,sf1_03:3,sf1_04:4,sf1_05:2,sf1_06:2,sf1_07:2,sf1_08:4,sf1_09:3,sf1_10:5,sf1_11:3,sf1_12:3,
   sf2_01:3,sf2_02:10,sf2_03:3,sf2_04:4,sf2_05:2,sf2_06:2,sf2_07:2,sf2_08:4,sf2_09:3,sf2_10:5,sf2_11:3,sf2_12:3,
   t3_01:3,t3_02:10,t3_03:3,t3_04:4,t3_05:2,t3_06:2,t3_07:2,t3_08:4,t3_09:3,t3_10:5,t3_11:3,t3_12:3,
   fin_01:3,fin_02:10,fin_03:3,fin_04:4,fin_05:3,fin_06:2,fin_07:2,fin_08:2,fin_09:4,fin_10:3,fin_11:5,fin_12:3,
   t_01:5,t_02:3,t_03:3,t_04:3,t_05:3
 };
-const TOTAL = 53;
+const TOTAL = 41;
 
 const ML = {
-  sf1_01:'SF1',sf1_02:'SF1',sf1_03:'SF1',sf1_04:'SF1',sf1_05:'SF1',sf1_06:'SF1',sf1_07:'SF1',sf1_08:'SF1',sf1_09:'SF1',sf1_10:'SF1',sf1_11:'SF1',sf1_12:'SF1',
   sf2_01:'SF2',sf2_02:'SF2',sf2_03:'SF2',sf2_04:'SF2',sf2_05:'SF2',sf2_06:'SF2',sf2_07:'SF2',sf2_08:'SF2',sf2_09:'SF2',sf2_10:'SF2',sf2_11:'SF2',sf2_12:'SF2',
   t3_01:'3RD',t3_02:'3RD',t3_03:'3RD',t3_04:'3RD',t3_05:'3RD',t3_06:'3RD',t3_07:'3RD',t3_08:'3RD',t3_09:'3RD',t3_10:'3RD',t3_11:'3RD',t3_12:'3RD',
   fin_01:'FIN',fin_02:'FIN',fin_03:'FIN',fin_04:'FIN',fin_05:'FIN',fin_06:'FIN',fin_07:'FIN',fin_08:'FIN',fin_09:'FIN',fin_10:'FIN',fin_11:'FIN',fin_12:'FIN',
@@ -447,7 +436,6 @@ const ML = {
 };
 
 const QL = {
-  sf1_01:'Who wins?',sf1_02:'Exact score',sf1_03:'Extra time?',sf1_04:'Penalties?',sf1_05:'3+ goals?',sf1_06:'Both score?',sf1_07:'1st half goal?',sf1_08:'HT score',sf1_09:'More goals half',sf1_10:'First scorer',sf1_11:'Anytime scorer',sf1_12:'Red card?',
   sf2_01:'Who wins?',sf2_02:'Exact score',sf2_03:'Extra time?',sf2_04:'Penalties?',sf2_05:'3+ goals?',sf2_06:'Both score?',sf2_07:'1st half goal?',sf2_08:'HT score',sf2_09:'More goals half',sf2_10:'First scorer',sf2_11:'Anytime scorer',sf2_12:'Red card?',
   t3_01:'Who wins?',t3_02:'Exact score',t3_03:'Extra time?',t3_04:'Penalties?',t3_05:'3+ goals?',t3_06:'Both score?',t3_07:'1st half goal?',t3_08:'HT score',t3_09:'More goals half',t3_10:'First scorer',t3_11:'Anytime scorer',t3_12:'Red card?',
   fin_01:'Who wins?',fin_02:'Exact score',fin_03:'Extra time?',fin_04:'Penalties?',fin_05:'Red card?',fin_06:'3+ goals?',fin_07:'Both score?',fin_08:'1st half goal?',fin_09:'HT score',fin_10:'More goals half',fin_11:'First scorer',fin_12:'Anytime scorer',
@@ -455,27 +443,22 @@ const QL = {
 };
 
 const RO = {
-  sf1_01:['France wins','Spain wins'],sf1_02:['1-0','0-1','1-1','2-0','0-2','2-1','1-2','0-0'],
-  sf1_03:['Yes','No'],sf1_04:['Yes','No'],sf1_05:['Yes','No'],sf1_06:['Yes','No'],sf1_07:['Yes','No'],
-  sf1_08:['0-0','1-0','0-1','1-1','2-0','0-2'],sf1_09:['1st','Equal','2nd'],
-  sf1_10:['Mbappé','Dembélé','Olise','Doué','Yamal','Oyarzabal','Merino','Olmo'],
-  sf1_11:['Mbappé','Dembélé','Yamal','Oyarzabal','Olmo','Olise'],sf1_12:['Yes','No'],
   sf2_01:['England wins','Argentina wins'],sf2_02:['1-0','0-1','1-1','2-0','0-2','2-1','1-2','0-0'],
   sf2_03:['Yes','No'],sf2_04:['Yes','No'],sf2_05:['Yes','No'],sf2_06:['Yes','No'],sf2_07:['Yes','No'],
   sf2_08:['0-0','1-0','0-1','1-1','2-0','0-2'],sf2_09:['1st','Equal','2nd'],
   sf2_10:['Bellingham','Kane','Saka','Foden','Messi','J.Álvarez','De Paul','Mac Allister'],
   sf2_11:['Bellingham','Kane','Saka','Messi','J.Álvarez','Lautaro Martínez'],sf2_12:['Yes','No'],
-  t3_01:['SF1 Loser wins','SF2 Loser wins'],t3_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
+  t3_01:['France wins','SF2 Loser wins'],t3_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
   t3_03:['Yes','No'],t3_04:['Yes','No'],t3_05:['Yes','No'],t3_06:['Yes','No'],t3_07:['Yes','No'],
   t3_08:['0-0','1-0','0-1','1-1'],t3_09:['1st','Equal','2nd'],
-  t3_10:['Mbappé','Dembélé','Yamal','Bellingham','Kane','Messi','Olise'],
-  t3_11:['Mbappé','Yamal','Bellingham','Kane','Messi','Dembélé'],t3_12:['Yes','No'],
-  fin_01:['SF1 Winner wins','SF2 Winner wins'],fin_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
+  t3_10:['Mbappé','Dembélé','Bellingham','Kane','Messi','Olise'],
+  t3_11:['Mbappé','Bellingham','Kane','Messi','Dembélé'],t3_12:['Yes','No'],
+  fin_01:['Spain wins','SF2 Winner wins'],fin_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
   fin_03:['Yes','No'],fin_04:['Yes','No'],fin_05:['Yes','No'],fin_06:['Yes','No'],fin_07:['Yes','No'],fin_08:['Yes','No'],
   fin_09:['0-0','1-0','0-1','1-1'],fin_10:['1st','Equal','2nd'],
-  fin_11:['Mbappé','Kane','Messi','Bellingham','Dembélé','Yamal'],
-  fin_12:['Mbappé','Kane','Messi','Bellingham','Saka'],
-  t_01:['France','Spain','England','Argentina'],
+  fin_11:['Kane','Messi','Bellingham','Yamal'],
+  fin_12:['Kane','Messi','Bellingham','Saka'],
+  t_01:['Spain','England','Argentina'],
   t_02:['Mbappé','Messi','Kane','Bellingham','Dembélé'],
   t_03:['Mbappé','Messi','Kane','Yamal','Olise'],
   t_04:['Yamal','Doué','Cubarsí',"Nico O'Reilly",'Manzambi'],
@@ -555,29 +538,80 @@ function initPhotoSelects(){
 }
 initPhotoSelects();
 
-// ── LOGIN
-async function doLogin(){
+// ── AUTH
+function toggleAuthMode(e){
+  e.preventDefault();
+  authMode = authMode==='signup' ? 'signin' : 'signup';
+  document.getElementById('login-name-field').style.display = authMode==='signup' ? 'block' : 'none';
+  document.getElementById('btn-login').textContent = authMode==='signup' ? 'Create account →' : 'Sign in →';
+  document.getElementById('login-toggle-txt').textContent = authMode==='signup' ? 'Already registered?' : 'New here?';
+  document.getElementById('login-toggle').textContent = authMode==='signup' ? 'Sign in' : 'Create an account';
+  document.getElementById('login-err').style.display='none';
+  document.getElementById('login-ok').style.display='none';
+}
+
+async function forgotPassword(e){
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const err = document.getElementById('login-err'), ok = document.getElementById('login-ok');
+  err.style.display='none';ok.style.display='none';
+  if(!email){err.textContent='Enter your email above first';err.style.display='block';return;}
+  const {error}=await db.auth.resetPasswordForEmail(email);
+  if(error){err.textContent=error.message;err.style.display='block';return;}
+  ok.textContent='Password reset email sent — check your inbox.';ok.style.display='block';
+}
+
+async function ensurePlayerRow(user,name){
+  const {data}=await db.from('pool_players').select('name').eq('id',user.id).maybeSingle();
+  if(data)return data.name;
+  const finalName=(name||user.email.split('@')[0]).slice(0,30);
+  await db.from('pool_players').insert({id:user.id,name:finalName,email:user.email});
+  return finalName;
+}
+
+async function doAuth(){
   const name  = document.getElementById('login-name').value.trim();
   const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
   const err   = document.getElementById('login-err');
+  const ok    = document.getElementById('login-ok');
   const btn   = document.getElementById('btn-login');
-  if(!name){err.textContent='Please enter your name';err.style.display='block';return;}
-  err.style.display='none';
-  btn.disabled=true;btn.textContent='Entering...';
+  err.style.display='none';ok.style.display='none';
+  if(!email||!pass){err.textContent='Enter your email and password';err.style.display='block';return;}
+  if(authMode==='signup'&&!name){err.textContent='Please enter your name';err.style.display='block';return;}
+  if(pass.length<6){err.textContent='Password must be at least 6 characters';err.style.display='block';return;}
+  btn.disabled=true;btn.textContent='One sec...';
   try{
-    await db.from('pool_players').upsert({name,email:email||null},{onConflict:'name',ignoreDuplicates:true});
-    currentPlayer=name;
-    localStorage.setItem('wc2026_player',name);
+    if(authMode==='signup'){
+      const {data,error}=await db.auth.signUp({email,password:pass});
+      if(error)throw error;
+      if(!data.session){
+        ok.textContent='Account created! Check your email to confirm, then sign in.';
+        ok.style.display='block';
+        toggleAuthMode({preventDefault(){}});
+        btn.disabled=false;btn.textContent='Sign in →';
+        return;
+      }
+      currentUser=data.session.user;
+      currentPlayer=await ensurePlayerRow(currentUser,name);
+    }else{
+      const {data,error}=await db.auth.signInWithPassword({email,password:pass});
+      if(error)throw error;
+      currentUser=data.session.user;
+      currentPlayer=await ensurePlayerRow(currentUser,name);
+    }
     showApp();
     await loadExistingPicks();
   }catch(e){
-    err.textContent='Something went wrong. Try again.';err.style.display='block';
-    btn.disabled=false;btn.textContent='Enter the pool →';
+    err.textContent=e.message||'Something went wrong. Try again.';err.style.display='block';
+    btn.disabled=false;btn.textContent=authMode==='signup'?'Create account →':'Sign in →';
   }
 }
 
-function signOut(){
-  currentPlayer=null;localStorage.removeItem('wc2026_player');location.reload();
+async function signOut(){
+  await db.auth.signOut();
+  currentUser=null;currentPlayer=null;
+  location.reload();
 }
 
 // ── SHOW APP
@@ -652,7 +686,7 @@ function randomAll(){
     card.classList.add('picked');
   });
   syncSummary();
-  toast('All 53 markets randomized 🎲');
+  toast('All '+TOTAL+' markets randomized 🎲');
 }
 
 // ── SUBMIT
@@ -663,8 +697,8 @@ async function doSubmit(){
   try{
     // Auto-fill blanks with random before saving
     Object.keys(RO).forEach(mid=>{if(!picks[mid])picks[mid]=rnd(RO[mid]);});
-    const rows=Object.entries(picks).map(([market_id,p])=>({player_name:currentPlayer,market_id,pick:p}));
-    const {error}=await db.from('pool_picks').upsert(rows,{onConflict:'player_name,market_id'});
+    const rows=Object.entries(picks).map(([market_id,p])=>({user_id:currentUser.id,player_name:currentPlayer,market_id,pick:p}));
+    const {error}=await db.from('pool_picks').upsert(rows,{onConflict:'user_id,market_id'});
     if(error)throw error;
     submitted=true;
     btn.textContent='Picks submitted ✓';
@@ -678,7 +712,7 @@ async function doSubmit(){
 
 // ── LOAD EXISTING
 async function loadExistingPicks(){
-  const {data}=await db.from('pool_picks').select('market_id,pick').eq('player_name',currentPlayer);
+  const {data}=await db.from('pool_picks').select('market_id,pick').eq('user_id',currentUser.id);
   if(!data||!data.length)return;
   submitted=true;
   data.forEach(({market_id,pick:val})=>{
@@ -708,7 +742,7 @@ async function loadExistingPicks(){
 async function renderMyPicks(){
   const body=document.getElementById('mypicks-body');
   body.innerHTML='<div class="loading">Loading...</div>';
-  const {data:pd}=await db.from('pool_picks').select('market_id,pick').eq('player_name',currentPlayer).order('market_id');
+  const {data:pd}=await db.from('pool_picks').select('market_id,pick').eq('user_id',currentUser.id).order('market_id');
   const {data:rd}=await db.from('pool_results').select('market_id,result');
   const rm={};(rd||[]).forEach(r=>rm[r.market_id]=r.result);
   if(!pd||!pd.length){
@@ -796,10 +830,15 @@ function toast(msg){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-// ── AUTO-LOGIN
+// ── SESSION RESTORE
 window.addEventListener('DOMContentLoaded',async()=>{
-  const saved=localStorage.getItem('wc2026_player');
-  if(saved){currentPlayer=saved;showApp();await loadExistingPicks();}
+  const {data:{session}}=await db.auth.getSession();
+  if(session){
+    currentUser=session.user;
+    currentPlayer=await ensurePlayerRow(currentUser);
+    showApp();
+    await loadExistingPicks();
+  }
 });
 </script>
 </body>

@@ -1,26 +1,33 @@
--- WC2026 Office Pool schema
--- Run this in Supabase SQL Editor
+-- WC2026 Office Pool schema (v2 — real email+password login via Supabase Auth)
+-- Run this in Supabase SQL Editor. It drops and recreates the pool tables,
+-- which is safe as long as no real picks need to be preserved (test data only).
 
--- Players (one row per person who registers)
-create table if not exists pool_players (
-  id uuid default gen_random_uuid() primary key,
+drop table if exists pool_picks;
+drop table if exists pool_players;
+drop table if exists pool_results;
+
+-- Players — one row per registered user. id = their auth.users id.
+create table pool_players (
+  id uuid primary key references auth.users(id) on delete cascade,
   name text not null unique,
   email text,
+  is_admin boolean not null default false,
   created_at timestamptz default now()
 );
 
--- Picks (one row per market per player)
-create table if not exists pool_picks (
+-- Picks — one row per market per player
+create table pool_picks (
   id uuid default gen_random_uuid() primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
   player_name text not null,
   market_id text not null,
   pick text not null,
   submitted_at timestamptz default now(),
-  unique(player_name, market_id)
+  unique(user_id, market_id)
 );
 
--- Results (one row per market — organizer fills in)
-create table if not exists pool_results (
+-- Results — one row per market — organizer fills in
+create table pool_results (
   market_id text primary key,
   result text,
   updated_at timestamptz default now()
@@ -31,13 +38,25 @@ alter table pool_players enable row level security;
 alter table pool_picks   enable row level security;
 alter table pool_results enable row level security;
 
--- Anyone can register and submit picks
-create policy "anyone_insert_players" on pool_players for insert to anon with check (true);
-create policy "anyone_read_players"   on pool_players for select to anon using (true);
-create policy "anyone_insert_picks"   on pool_picks   for insert to anon with check (true);
-create policy "anyone_read_picks"     on pool_picks   for select to anon using (true);
-create policy "anyone_read_results"   on pool_results for select to anon using (true);
+-- Players: any logged-in user can read the list (leaderboard), but can only
+-- create/update their own row.
+create policy "read_players" on pool_players for select to authenticated using (true);
+create policy "insert_own_player" on pool_players for insert to authenticated with check (auth.uid() = id);
+create policy "update_own_player" on pool_players for update to authenticated using (auth.uid() = id);
 
--- Only service role can insert results (admin)
-create policy "service_insert_results" on pool_results for all to service_role using (true) with check (true);
-create policy "service_update_picks"   on pool_picks   for update to service_role using (true);
+-- Picks: any logged-in user can read all picks (leaderboard/scoring), but can
+-- only write their own.
+create policy "read_picks" on pool_picks for select to authenticated using (true);
+create policy "insert_own_picks" on pool_picks for insert to authenticated with check (auth.uid() = user_id);
+create policy "update_own_picks" on pool_picks for update to authenticated using (auth.uid() = user_id);
+
+-- Results: any logged-in user can read; only players flagged is_admin=true can write.
+create policy "read_results" on pool_results for select to authenticated using (true);
+create policy "admin_insert_results" on pool_results for insert to authenticated
+  with check (exists (select 1 from pool_players where id = auth.uid() and is_admin = true));
+create policy "admin_update_results" on pool_results for update to authenticated
+  using (exists (select 1 from pool_players where id = auth.uid() and is_admin = true));
+
+-- After deploying, sign up through the live site with your own account, then
+-- run this once (with your email) to make yourself the admin:
+-- update pool_players set is_admin = true where email = 'you@example.com';
