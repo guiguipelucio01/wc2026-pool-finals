@@ -146,6 +146,30 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
 .sel-inp:focus{border-color:var(--green)}
 .sel-inp option,.sel-inp optgroup{background:#18181b}
 
+/* PHOTO SELECT */
+.psel{position:relative}
+.psel-btn{width:100%;display:flex;align-items:center;gap:9px;background:var(--s1);
+  border:1px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--text);
+  font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;transition:border-color .15s;text-align:left}
+.psel-btn:hover,.psel.open .psel-btn{border-color:var(--border2)}
+.psel-ph{width:26px;height:26px;border-radius:50%;overflow:hidden;flex-shrink:0;
+  background:var(--s2);display:flex;align-items:center;justify-content:center}
+.psel-ph img{width:100%;height:100%;object-fit:cover;object-position:top}
+.psel-ph-i{font-size:13px;opacity:.5}
+.psel-txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.psel-btn.filled .psel-txt{color:var(--text)}
+.psel-arrow{font-size:10px;color:var(--muted);flex-shrink:0;transition:transform .15s}
+.psel.open .psel-arrow{transform:rotate(180deg)}
+.psel-panel{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;
+  background:#18181b;border:1px solid var(--border2);border-radius:9px;max-height:260px;
+  overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.psel.open .psel-panel{display:block}
+.psel-grp{padding:8px 12px 4px;font-size:10px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em}
+.psel-row{display:flex;align-items:center;gap:9px;padding:7px 12px;cursor:pointer;font-size:13px}
+.psel-row:hover{background:var(--s2)}
+.psel-row .psel-ph{width:24px;height:24px}
+
 /* SUBMIT */
 .submit-wrap{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:22px}
 .submit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
@@ -460,6 +484,77 @@ const RO = {
 
 function rnd(a){return a[Math.floor(Math.random()*a.length)];}
 
+// ── PHOTO SELECTS (FotMob player images for scorer dropdowns)
+const PLAYER_FOTMOB_ID = {
+  'Mbappé':701154,'Dembélé':692984,'Olise':1029063,'Barcola':1297165,'Doué':1339208,
+  'Tchouaméni':914458,'Kanté':319300,'Zaïre-Emery':1367615,'Saliba':955406,'Upamecano':658554,'Maignan':466439,
+  'Yamal':1467236,'Oyarzabal':678234,'Merino':574645,'Olmo':614834,'Pedri':1083323,'Rodri':675088,
+  'Nico Williams':1202110,'Cucurella':873289,'Le Normand':609516,'Carvajal':282674,'Unai Simón':660625,
+  'Bellingham':1077894,'Kane':194165,'Saka':961995,'Foden':815006,'Rice':654096,'Madueke':1084981,
+  'Mainoo':1292810,'Guehi':844425,'Stones':263653,'Pickford':303919,"Nico O'Reilly":1300526,
+  'Messi':30981,'J.Álvarez':974753,'Lautaro Martínez':690230,'Mac Allister':831489,'E.Fernández':1137705,
+  'De Paul':324578,'Romero':789066,'L.Martínez':847983,'Molina':726345,'Dibu Martínez':268375,'Tagliafico':195750,
+};
+function fotmobPhotoHTML(name){
+  const pid=PLAYER_FOTMOB_ID[name];
+  return pid?`<img src="https://images.fotmob.com/image_resources/playerimages/${pid}.png" loading="lazy" alt="" onerror="this.parentNode.innerHTML='<span class=psel-ph-i>👤</span>'">`:'<span class="psel-ph-i">👤</span>';
+}
+function closeAllPsel(){document.querySelectorAll('.psel.open').forEach(p=>p.classList.remove('open'));}
+document.addEventListener('click',closeAllPsel);
+
+function initPhotoSelects(){
+  document.querySelectorAll('select.sel-inp').forEach(sel=>{
+    const mid=sel.id.replace('sel-','');
+    sel.style.display='none';
+    const wrap=document.createElement('div');
+    wrap.className='psel';
+    wrap.innerHTML=`<button type="button" class="psel-btn"><span class="psel-ph">${fotmobPhotoHTML()}</span><span class="psel-txt">Pick a player...</span><span class="psel-arrow">▾</span></button><div class="psel-panel"></div>`;
+    sel.insertAdjacentElement('afterend',wrap);
+
+    const panel=wrap.querySelector('.psel-panel');
+    const addRow=opt=>{
+      const name=opt.value;
+      if(!name)return;
+      const row=document.createElement('div');
+      row.className='psel-row';
+      row.innerHTML=`<span class="psel-ph">${fotmobPhotoHTML(name)}</span><span>${name}</span>`;
+      row.onclick=()=>{
+        sel.value=name;
+        sel.dispatchEvent(new Event('change'));
+        closeAllPsel();
+      };
+      panel.appendChild(row);
+    };
+    Array.from(sel.children).forEach(node=>{
+      if(node.tagName==='OPTGROUP'){
+        const h=document.createElement('div');
+        h.className='psel-grp';h.textContent=node.label;
+        panel.appendChild(h);
+        Array.from(node.children).forEach(addRow);
+      }else if(node.tagName==='OPTION'){
+        addRow(node);
+      }
+    });
+
+    const btn=wrap.querySelector('.psel-btn');
+    btn.onclick=e=>{
+      e.stopPropagation();
+      const isOpen=wrap.classList.contains('open');
+      closeAllPsel();
+      if(!isOpen)wrap.classList.add('open');
+    };
+
+    sel.addEventListener('change',()=>{
+      const name=sel.value;
+      const txt=wrap.querySelector('.psel-txt'),ph=wrap.querySelector('.psel-btn>.psel-ph');
+      txt.textContent=name||'Pick a player...';
+      btn.classList.toggle('filled',!!name);
+      ph.innerHTML=fotmobPhotoHTML(name);
+    });
+  });
+}
+initPhotoSelects();
+
 // ── LOGIN
 async function doLogin(){
   const name  = document.getElementById('login-name').value.trim();
@@ -553,7 +648,7 @@ function randomAll(){
       if(h){h.value=v[0];a.value=v[2];}
     }
     const sel=document.getElementById('sel-'+mid);
-    if(sel)sel.value=v;
+    if(sel){sel.value=v;sel.dispatchEvent(new Event('change'));}
     card.classList.add('picked');
   });
   syncSummary();
@@ -601,7 +696,7 @@ async function loadExistingPicks(){
       if(h){h.value=p[0];a.value=p[1];}
     }
     const sel=document.getElementById('sel-'+market_id);
-    if(sel)sel.value=val;
+    if(sel){sel.value=val;sel.dispatchEvent(new Event('change'));}
   });
   syncSummary();
   const btn=document.getElementById('sbtn');
