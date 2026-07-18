@@ -44,6 +44,14 @@ h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4p
 .mkt-row.has-result{border-color:var(--greenbd)}
 .mr-q{font-size:13px;font-weight:500}
 .mr-hint{font-size:11px;color:var(--muted);margin-top:2px}
+.mkt-row.multi{display:block}
+.mr-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.chk-grid{display:flex;flex-wrap:wrap;gap:6px}
+.chk-chip{display:flex;align-items:center;gap:5px;background:var(--s1);border:1px solid var(--border);
+  border-radius:20px;padding:5px 10px 5px 8px;font-size:12px;cursor:pointer;user-select:none;transition:all .1s}
+.chk-chip input{accent-color:var(--orange);cursor:pointer}
+.chk-chip:hover{border-color:var(--border2)}
+.chk-chip:has(input:checked){border-color:var(--greenbd);background:var(--greenbg);color:var(--green)}
 .result-sel{width:100%;background:var(--s1);border:1px solid var(--border);
   border-radius:7px;padding:8px 12px;color:var(--text);font-size:13px;
   font-family:'Inter',sans-serif;outline:none;-webkit-appearance:none;appearance:none;
@@ -142,7 +150,7 @@ h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4p
     <div class="stat"><div class="sv" id="s-players" style="color:var(--blue)">—</div><div class="sk">Players</div></div>
     <div class="stat"><div class="sv" id="s-picks" style="color:var(--green)">—</div><div class="sk">Total picks</div></div>
     <div class="stat"><div class="sv" id="s-results" style="color:var(--orange)">—</div><div class="sk">Results entered</div></div>
-    <div class="stat"><div class="sv" id="s-markets" style="color:var(--gold)">41</div><div class="sk">Total markets</div></div>
+    <div class="stat"><div class="sv" id="s-markets" style="color:var(--gold)">29</div><div class="sk">Total markets</div></div>
   </div>
 
   <div class="tab-bar">
@@ -216,25 +224,16 @@ window.addEventListener('DOMContentLoaded',async()=>{
 });
 
 const PTS={
-  sf2_01:3,sf2_02:10,sf2_03:3,sf2_04:4,sf2_05:2,sf2_06:2,sf2_07:2,sf2_08:4,sf2_09:3,sf2_10:5,sf2_11:3,sf2_12:3,
   t3_01:3,t3_02:10,t3_03:3,t3_04:4,t3_05:2,t3_06:2,t3_07:2,t3_08:4,t3_09:3,t3_10:5,t3_11:3,t3_12:3,
   fin_01:3,fin_02:10,fin_03:3,fin_04:4,fin_05:3,fin_06:2,fin_07:2,fin_08:2,fin_09:4,fin_10:3,fin_11:5,fin_12:3,
   t_01:5,t_02:3,t_03:3,t_04:3,t_05:3
 };
 
+// Markets whose result can be more than one player (e.g. Messi AND Kane both
+// score anytime in the same game) — rendered as checkboxes, stored comma-joined.
+const MULTI_MARKETS=['t3_11','fin_12'];
+
 const MARKETS=[
-  {id:'sf2_01',match:'Semi-Final 2 — England vs Argentina',q:'Who wins?',opts:['England wins','Argentina wins']},
-  {id:'sf2_02',match:'Semi-Final 2 — England vs Argentina',q:'Exact score at 90 min?',opts:['0-0','1-0','0-1','1-1','2-0','0-2','2-1','1-2','2-2','3-0','0-3','3-1','1-3','Other']},
-  {id:'sf2_03',match:'Semi-Final 2 — England vs Argentina',q:'Extra time?',opts:['Yes','No']},
-  {id:'sf2_04',match:'Semi-Final 2 — England vs Argentina',q:'Penalties?',opts:['Yes','No']},
-  {id:'sf2_05',match:'Semi-Final 2 — England vs Argentina',q:'3 or more goals?',opts:['Yes','No']},
-  {id:'sf2_06',match:'Semi-Final 2 — England vs Argentina',q:'Both teams score?',opts:['Yes','No']},
-  {id:'sf2_07',match:'Semi-Final 2 — England vs Argentina',q:'Goal in first half?',opts:['Yes','No']},
-  {id:'sf2_08',match:'Semi-Final 2 — England vs Argentina',q:'Half-time score?',opts:['0-0','1-0','0-1','1-1','2-0','0-2','Other']},
-  {id:'sf2_09',match:'Semi-Final 2 — England vs Argentina',q:'Which half more goals?',opts:['1st','Equal','2nd']},
-  {id:'sf2_10',match:'Semi-Final 2 — England vs Argentina',q:'First goal scorer?',opts:['Bellingham','Kane','Saka','Foden','Rice','Madueke','Mainoo','Guehi','Stones','Pickford','Nico O\'Reilly','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','E.Fernández','De Paul','Romero','L.Martínez','Molina','Dibu Martínez','Tagliafico','Own goal']},
-  {id:'sf2_11',match:'Semi-Final 2 — England vs Argentina',q:'Anytime scorer?',opts:['Bellingham','Kane','Saka','Foden','Rice','Madueke','Mainoo','Guehi','Stones','Pickford','Nico O\'Reilly','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','E.Fernández','De Paul','Romero','L.Martínez','Molina','Dibu Martínez','Tagliafico']},
-  {id:'sf2_12',match:'Semi-Final 2 — England vs Argentina',q:'Red card shown?',opts:['Yes','No']},
   {id:'t3_01',match:'3rd Place Match',q:'Who wins?',opts:['France wins','SF2 Loser wins']},
   {id:'t3_02',match:'3rd Place Match',q:'Exact score at 90 min?',opts:['0-0','1-0','0-1','1-1','2-0','0-2','2-1','1-2','2-2','3-0','0-3','Other']},
   {id:'t3_03',match:'3rd Place Match',q:'Extra time?',opts:['Yes','No']},
@@ -244,8 +243,8 @@ const MARKETS=[
   {id:'t3_07',match:'3rd Place Match',q:'Goal in first half?',opts:['Yes','No']},
   {id:'t3_08',match:'3rd Place Match',q:'Half-time score?',opts:['0-0','1-0','0-1','1-1','2-0','0-2','Other']},
   {id:'t3_09',match:'3rd Place Match',q:'Which half more goals?',opts:['1st','Equal','2nd']},
-  {id:'t3_10',match:'3rd Place Match',q:'First goal scorer?',opts:['Mbappé','Dembélé','Olise','Barcola','Doué','Bellingham','Kane','Saka','Foden','Rice','Madueke','Mainoo','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','E.Fernández','De Paul','Romero','Dibu Martínez','Own goal']},
-  {id:'t3_11',match:'3rd Place Match',q:'Anytime scorer?',opts:['Mbappé','Dembélé','Olise','Bellingham','Kane','Saka','Foden','Rice','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','De Paul','Romero','Dibu Martínez']},
+  {id:'t3_10',match:'3rd Place Match',q:'First goal scorer?',opts:['Mbappé','Dembélé','Olise','Barcola','Doué','Tchouaméni','Kanté','Zaïre-Emery','Saliba','Upamecano','Maignan','Bellingham','Kane','Saka','Foden','Rice','Madueke','Mainoo','Guehi','Stones','Pickford','Nico O\'Reilly','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','E.Fernández','De Paul','Romero','L.Martínez','Molina','Dibu Martínez','Tagliafico','Own goal']},
+  {id:'t3_11',match:'3rd Place Match',q:'Anytime scorer?',opts:['Mbappé','Dembélé','Olise','Barcola','Doué','Bellingham','Kane','Saka','Foden','Rice','Madueke','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','De Paul','Romero','Dibu Martínez']},
   {id:'t3_12',match:'3rd Place Match',q:'Red card shown?',opts:['Yes','No']},
   {id:'fin_01',match:'World Cup Final',q:'Who wins?',opts:['Spain wins','SF2 Winner wins']},
   {id:'fin_02',match:'World Cup Final',q:'Exact score at 90 min?',opts:['0-0','1-0','0-1','1-1','2-0','0-2','2-1','1-2','2-2','3-0','0-3','Other']},
@@ -257,8 +256,8 @@ const MARKETS=[
   {id:'fin_08',match:'World Cup Final',q:'Goal in first half?',opts:['Yes','No']},
   {id:'fin_09',match:'World Cup Final',q:'Half-time score?',opts:['0-0','1-0','0-1','1-1','2-0','0-2','Other']},
   {id:'fin_10',match:'World Cup Final',q:'Which half more goals?',opts:['1st','Equal','2nd']},
-  {id:'fin_11',match:'World Cup Final',q:'First goal scorer?',opts:['Yamal','Oyarzabal','Merino','Olmo','Pedri','Rodri','Nico Williams','Bellingham','Kane','Saka','Foden','Rice','Madueke','Mainoo','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','E.Fernández','De Paul','Romero','Dibu Martínez','Own goal']},
-  {id:'fin_12',match:'World Cup Final',q:'Anytime scorer?',opts:['Yamal','Oyarzabal','Merino','Olmo','Rodri','Bellingham','Kane','Saka','Foden','Rice','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','De Paul','Romero','Dibu Martínez']},
+  {id:'fin_11',match:'World Cup Final',q:'First goal scorer?',opts:['Yamal','Oyarzabal','Merino','Olmo','Pedri','Rodri','Nico Williams','Cucurella','Le Normand','Carvajal','Unai Simón','Bellingham','Kane','Saka','Foden','Rice','Madueke','Mainoo','Guehi','Stones','Pickford','Nico O\'Reilly','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','E.Fernández','De Paul','Romero','L.Martínez','Molina','Dibu Martínez','Tagliafico','Own goal']},
+  {id:'fin_12',match:'World Cup Final',q:'Anytime scorer?',opts:['Yamal','Oyarzabal','Merino','Olmo','Pedri','Rodri','Nico Williams','Bellingham','Kane','Saka','Foden','Rice','Madueke','Messi','J.Álvarez','Lautaro Martínez','Mac Allister','De Paul','Romero','Dibu Martínez']},
   {id:'t_01',match:'Tournament Awards',q:'World Cup champion?',opts:['Spain','England','Argentina']},
   {id:'t_02',match:'Tournament Awards',q:'Golden Boot (top scorer)?',opts:['Mbappé','Messi','Kane','Bellingham','Dembélé','Other']},
   {id:'t_03',match:'Tournament Awards',q:'Golden Ball (best player)?',opts:['Mbappé','Messi','Kane','Yamal','Olise','Other']},
@@ -293,17 +292,30 @@ function renderResults(){
     }
     const cur=existingResults[id]||'';
     const hasRes=!!cur;
-    html+=`<div class="mkt-row${hasRes?' has-result':''}">
-      <div><div class="mr-q">${q}</div></div>
-      <div>
-        <select class="result-sel" id="res-${id}" onchange="markChanged('${id}')">
-          <option value="">— not entered yet —</option>
-          ${opts.map(o=>`<option value="${o}"${o===cur?' selected':''}>${o}</option>`).join('')}
-        </select>
-      </div>
-      <div class="pts-badge">${PTS[id]||0} pts</div>
-    </div>`;
-    // Close match section div after last market of each match
+    const isMulti=MULTI_MARKETS.includes(id);
+    if(isMulti){
+      const curArr=cur?cur.split(',').map(s=>s.trim()):[];
+      html+=`<div class="mkt-row multi${hasRes?' has-result':''}">
+        <div class="mr-head">
+          <div><div class="mr-q">${q}</div><div class="mr-hint">Select all players who scored — multiple allowed</div></div>
+          <div class="pts-badge">${PTS[id]||0} pts</div>
+        </div>
+        <div class="chk-grid" id="res-${id}">
+          ${opts.map((o,i)=>`<label class="chk-chip"><input type="checkbox" value="${o}" id="chk-${id}-${i}"${curArr.includes(o)?' checked':''} onchange="markChangedMulti('${id}')"> ${o}</label>`).join('')}
+        </div>
+      </div>`;
+    }else{
+      html+=`<div class="mkt-row${hasRes?' has-result':''}">
+        <div><div class="mr-q">${q}</div></div>
+        <div>
+          <select class="result-sel" id="res-${id}" onchange="markChanged('${id}')">
+            <option value="">— not entered yet —</option>
+            ${opts.map(o=>`<option value="${o}"${o===cur?' selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>
+        <div class="pts-badge">${PTS[id]||0} pts</div>
+      </div>`;
+    }
   });
   html+='</div>';
   document.getElementById('results-body').innerHTML=html;
@@ -315,14 +327,28 @@ function markChanged(id){
   else row.classList.remove('has-result');
 }
 
+function markChangedMulti(id){
+  const wrap=document.getElementById('res-'+id);
+  const row=wrap.closest('.mkt-row');
+  const any=wrap.querySelectorAll('input:checked').length>0;
+  row.classList.toggle('has-result',any);
+}
+
+function getResultValue(id){
+  if(MULTI_MARKETS.includes(id)){
+    const wrap=document.getElementById('res-'+id);
+    const vals=Array.from(wrap.querySelectorAll('input:checked')).map(c=>c.value);
+    return vals.length?vals.join(','):null;
+  }
+  return document.getElementById('res-'+id)?.value||null;
+}
+
 async function saveAll(){
   const btn=document.getElementById('btn-save');
   btn.disabled=true;btn.textContent='Saving...';
   try{
-    const rows=MARKETS.map(({id})=>{
-      const val=document.getElementById('res-'+id)?.value||null;
-      return {market_id:id,result:val,updated_at:new Date().toISOString()};
-    }).filter(r=>r.result);
+    const rows=MARKETS.map(({id})=>({market_id:id,result:getResultValue(id),updated_at:new Date().toISOString()}))
+      .filter(r=>r.result);
     if(!rows.length){toast('No results to save');btn.disabled=false;btn.textContent='💾 Save all results';return;}
     const {error}=await db.from('pool_results').upsert(rows,{onConflict:'market_id'});
     if(error)throw error;
@@ -334,6 +360,13 @@ async function saveAll(){
     toast('Error saving results');console.error(e);
   }
   btn.disabled=false;btn.textContent='💾 Save all results';
+}
+
+function isCorrectPick(market_id,pick,rm){
+  const res=rm[market_id];
+  if(!res)return false;
+  if(MULTI_MARKETS.includes(market_id))return res.split(',').map(s=>s.trim()).includes(pick);
+  return res===pick;
 }
 
 async function renderLeaderboard(){
@@ -351,7 +384,7 @@ async function renderLeaderboard(){
   const scored=(pl||[]).map(({name})=>{
     const mp=byP[name]||[];
     const pts=mp.reduce((s,{market_id,pick})=>{
-      if(rm[market_id]&&rm[market_id]===pick)return s+(PTS[market_id]||0);return s;},0);
+      if(isCorrectPick(market_id,pick,rm))return s+(PTS[market_id]||0);return s;},0);
     return {name,pts,count:mp.length};
   }).sort((a,b)=>b.pts-a.pts||b.count-a.count);
   const PZ={0:'🥇 $500',1:'🥈 $200',2:'🥉 $100'};
