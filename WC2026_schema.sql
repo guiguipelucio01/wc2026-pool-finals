@@ -60,3 +60,19 @@ create policy "admin_update_results" on pool_results for update to authenticated
 -- After deploying, sign up through the live site with your own account, then
 -- run this once (with your email) to make yourself the admin:
 -- update pool_players set is_admin = true where email = 'you@example.com';
+
+-- ── v3 — admin-controlled open/close switch for picks ──────────────────────
+-- Purely additive: safe to run once against an existing database, does not
+-- touch pool_players/pool_picks/pool_results. Single-row settings table.
+create table if not exists pool_settings (
+  id boolean primary key default true,
+  picks_open boolean not null default true,
+  updated_at timestamptz default now(),
+  constraint pool_settings_singleton check (id)
+);
+insert into pool_settings (id, picks_open) values (true, true) on conflict (id) do nothing;
+
+alter table pool_settings enable row level security;
+create policy "read_settings" on pool_settings for select to authenticated using (true);
+create policy "admin_update_settings" on pool_settings for update to authenticated
+  using (exists (select 1 from pool_players where id = auth.uid() and is_admin = true));

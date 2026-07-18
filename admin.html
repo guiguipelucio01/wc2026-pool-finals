@@ -28,6 +28,23 @@ h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4p
 .alert{background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);
   border-radius:var(--r);padding:12px 14px;font-size:12px;color:var(--orange);margin-bottom:20px}
 
+/* PICKS OPEN/CLOSE TOGGLE */
+.picks-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  background:var(--s2);border:1px solid var(--greenbd);border-radius:var(--r);padding:14px 16px;margin-bottom:20px}
+.picks-toggle.closed{border-color:rgba(239,68,68,.3)}
+.pt-info{display:flex;align-items:center;gap:10px}
+.pt-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0}
+.picks-toggle.closed .pt-dot{background:var(--red);box-shadow:0 0 6px var(--red)}
+.pt-title{font-weight:700;font-size:14px}
+.pt-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.btn-pt{padding:8px 16px;border-radius:7px;border:1px solid var(--border2);background:var(--s1);
+  color:var(--text);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;
+  white-space:nowrap;transition:all .15s}
+.btn-pt:hover{filter:brightness(1.1)}
+.btn-pt:disabled{opacity:.6;cursor:not-allowed}
+.btn-pt.close{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red)}
+.btn-pt.open{background:var(--greenbg);border-color:var(--greenbd);color:var(--green)}
+
 /* STATS ROW */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
 .stat{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center}
@@ -145,6 +162,17 @@ h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4p
   <h2>Organizer Panel</h2>
   <div class="subtitle">Enter match results here · Leaderboard updates automatically for everyone</div>
   <div class="alert">⚠️ Only accounts flagged as admin in Supabase can sign in here — this page is safe to deploy alongside the main app.</div>
+
+  <div class="picks-toggle" id="picks-toggle">
+    <div class="pt-info">
+      <div class="pt-dot" id="pt-dot"></div>
+      <div>
+        <div class="pt-title" id="pt-title">Picks are OPEN</div>
+        <div class="pt-sub">Players can submit or change their picks</div>
+      </div>
+    </div>
+    <button class="btn-pt" id="btn-pt" onclick="togglePicksOpen()">🔒 Close picks</button>
+  </div>
 
   <div class="stats">
     <div class="stat"><div class="sv" id="s-players" style="color:var(--blue)">—</div><div class="sk">Players</div></div>
@@ -266,13 +294,48 @@ const MARKETS=[
 ];
 
 let existingResults={};
+let picksOpen=true;
+
+async function loadPicksOpen(){
+  const {data}=await db.from('pool_settings').select('picks_open').eq('id',true).maybeSingle();
+  picksOpen = data ? data.picks_open!==false : true;
+  renderPicksToggle();
+}
+
+function renderPicksToggle(){
+  const wrap=document.getElementById('picks-toggle');
+  const title=document.getElementById('pt-title');
+  const btn=document.getElementById('btn-pt');
+  wrap.classList.toggle('closed', !picksOpen);
+  title.textContent = picksOpen ? 'Picks are OPEN' : 'Picks are CLOSED';
+  btn.textContent = picksOpen ? '🔒 Close picks' : '🔓 Open picks';
+  btn.className = 'btn-pt ' + (picksOpen ? 'close' : 'open');
+}
+
+async function togglePicksOpen(){
+  const btn=document.getElementById('btn-pt');
+  btn.disabled=true;
+  try{
+    const newVal=!picksOpen;
+    const {error}=await db.from('pool_settings')
+      .update({picks_open:newVal,updated_at:new Date().toISOString()}).eq('id',true);
+    if(error)throw error;
+    picksOpen=newVal;
+    renderPicksToggle();
+    toast(picksOpen?'Picks are now open ✓':'Picks are now closed ✓');
+  }catch(e){
+    toast('Error updating picks status');console.error(e);
+  }
+  btn.disabled=false;
+}
 
 async function init(){
   // Load stats
   const [{data:pl},{data:pk},{data:rs}]=await Promise.all([
     db.from('pool_players').select('name',{count:'exact'}),
     db.from('pool_picks').select('id',{count:'exact'}),
-    db.from('pool_results').select('market_id,result')
+    db.from('pool_results').select('market_id,result'),
+    loadPicksOpen()
   ]);
   document.getElementById('s-players').textContent=(pl||[]).length;
   document.getElementById('s-picks').textContent=(pk||[]).length;

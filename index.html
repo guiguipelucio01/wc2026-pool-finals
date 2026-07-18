@@ -90,6 +90,11 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
 .sb-text{font-size:12px;color:var(--muted);flex:1}
 .sb-count{font-size:12px;font-weight:600;color:var(--text)}
 
+/* PICKS LOCKED (admin closed submissions) */
+.page.picks-locked .opt,.page.picks-locked .psel-btn,.page.picks-locked .btn-rand{
+  pointer-events:none;opacity:.5}
+.page.picks-locked .score-box{opacity:.5}
+
 /* RAND BANNER */
 .rand-banner{background:linear-gradient(135deg,#0f1a0f,#0a1a08);border:1px solid var(--greenbd);
   border-radius:var(--r);padding:11px 14px;margin-bottom:14px;
@@ -304,7 +309,7 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
 <!-- PICKS TAB -->
 <div class="page" id="tab-picks">
   <div class="status-bar">
-    <div class="sb-pill" id="sb-pill" data-i18n="sb_open">OPEN</div>
+    <div class="sb-pill" id="sb-pill">OPEN</div>
     <div class="sb-text" data-i18n="deadline">⏰ Deadline: 30 min before 3rd Place Match kickoff</div>
     <div class="sb-count" id="sb-count">0 / 29 picked</div>
   </div>
@@ -408,6 +413,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let currentPlayer = null;
 let hasSaved = false;
+let picksOpen = true;
 let authMode = 'signup'; // 'signup' | 'signin'
 const picks = {};
 
@@ -445,7 +451,7 @@ const I18N = {
   en: {
     nav_hi:'Hi,', nav_signout:'Sign out',
     tab_picks:'Place Picks', tab_mypicks:'My Picks', tab_lb:'Leaderboard',
-    sb_open:'OPEN', sb_picked:'picked',
+    sb_open:'OPEN', sb_closed:'CLOSED', sb_picked:'picked',
     deadline:'⏰ Deadline: 30 min before 3rd Place Match kickoff',
     rand_strong:"Don't want to decide?", rand_text:'Randomize all 29 markets instantly.', rand_btn:'🎲 Random all',
     match_3rd_chip:'3rd Place · Jul 18',
@@ -470,7 +476,7 @@ const I18N = {
     t_04_q:'Best Young Player?', t_04_hint:'Best player aged 21 or under',
     t_05_q:'Golden Glove — best goalkeeper?',
     submit_picked:'Picked', submit_maxpts:'Max pts', submit_left:'Left',
-    submit_btn:'Submit my picks', submit_btn_update:'Update my picks',
+    submit_btn:'Submit my picks', submit_btn_update:'Update my picks', submit_btn_closed:'Picks are closed',
     submit_note:'Blank picks = random · You can update your picks anytime before kickoff',
     mypicks_loading:'Loading...', mypicks_loading_full:'Loading your picks...',
     mypicks_empty_title:'No picks yet', mypicks_empty_sub:'Go to Place Picks to get started',
@@ -496,12 +502,12 @@ const I18N = {
     err_enter_email_first:'Enter your email above first',
     ok_reset:'Password reset email sent — check your inbox.',
     toast_random:'All 29 markets randomized 🎲', toast_saved:'Picks saved! Good luck 🏆',
-    toast_error_save:'Error saving. Try again.',
+    toast_error_save:'Error saving. Try again.', toast_picks_closed:'Picks are closed — the admin has paused submissions',
   },
   pt: {
     nav_hi:'Olá,', nav_signout:'Sair',
     tab_picks:'Fazer Palpites', tab_mypicks:'Meus Palpites', tab_lb:'Classificação',
-    sb_open:'ABERTO', sb_picked:'escolhidos',
+    sb_open:'ABERTO', sb_closed:'FECHADO', sb_picked:'escolhidos',
     deadline:'⏰ Prazo: 30 min antes do jogo do 3º lugar',
     rand_strong:'Não quer decidir?', rand_text:'Sorteie todos os 29 mercados instantaneamente.', rand_btn:'🎲 Aleatório',
     match_3rd_chip:'3º Lugar · 18 Jul',
@@ -526,7 +532,7 @@ const I18N = {
     t_04_q:'Melhor Jovem Jogador?', t_04_hint:'Melhor jogador com 21 anos ou menos',
     t_05_q:'Luva de Ouro — melhor goleiro?',
     submit_picked:'Escolhidos', submit_maxpts:'Pts máx', submit_left:'Restam',
-    submit_btn:'Enviar meus palpites', submit_btn_update:'Atualizar meus palpites',
+    submit_btn:'Enviar meus palpites', submit_btn_update:'Atualizar meus palpites', submit_btn_closed:'Palpites fechados',
     submit_note:'Palpites em branco = aleatório · Você pode atualizar seus palpites a qualquer momento antes do jogo',
     mypicks_loading:'Carregando...', mypicks_loading_full:'Carregando seus palpites...',
     mypicks_empty_title:'Nenhum palpite ainda', mypicks_empty_sub:'Vá em Fazer Palpites para começar',
@@ -552,7 +558,7 @@ const I18N = {
     err_enter_email_first:'Digite seu email acima primeiro',
     ok_reset:'Email de redefinição enviado — verifique sua caixa de entrada.',
     toast_random:'Todos os 29 mercados sorteados 🎲', toast_saved:'Palpites salvos! Boa sorte 🏆',
-    toast_error_save:'Erro ao salvar. Tente novamente.',
+    toast_error_save:'Erro ao salvar. Tente novamente.', toast_picks_closed:'Os palpites estão fechados — o admin pausou o envio',
   }
 };
 const LANG_KEY='wc2026_lang';
@@ -587,8 +593,9 @@ function applyLang(){
     b.classList.toggle('on', b.dataset.lang===lang);
   });
   refreshPlayerSelectPlaceholders();
-  const sbtn=document.getElementById('sbtn');
-  if(sbtn && !sbtn.disabled) sbtn.textContent=t(hasSaved?'submit_btn_update':'submit_btn');
+  refreshSubmitBtnText();
+  const pill=document.getElementById('sb-pill');
+  if(pill) pill.textContent=t(picksOpen?'sb_open':'sb_closed');
   const mp=document.getElementById('tab-mypicks'), lbT=document.getElementById('tab-lb');
   if(mp && mp.style.display==='block') renderMyPicks();
   if(lbT && lbT.style.display==='block') loadLeaderboard();
@@ -781,6 +788,33 @@ function showApp(){
   document.getElementById('tab-picks').style.display='block';
   applyLang();
   syncSummary();
+  refreshPicksOpen();
+}
+
+// ── PICKS OPEN/CLOSED (admin-controlled)
+async function refreshPicksOpen(){
+  const {data}=await db.from('pool_settings').select('picks_open').eq('id',true).maybeSingle();
+  picksOpen = data ? data.picks_open!==false : true;
+  applyPicksLockUI();
+}
+
+function refreshSubmitBtnText(){
+  const sbtn=document.getElementById('sbtn');
+  if(!sbtn || sbtn.textContent==='Saving...')return;
+  sbtn.textContent = !picksOpen ? t('submit_btn_closed') : t(hasSaved?'submit_btn_update':'submit_btn');
+}
+
+function applyPicksLockUI(){
+  const pill=document.getElementById('sb-pill');
+  if(pill){
+    pill.textContent=t(picksOpen?'sb_open':'sb_closed');
+    pill.classList.toggle('closed', !picksOpen);
+  }
+  document.getElementById('tab-picks')?.classList.toggle('picks-locked', !picksOpen);
+  document.querySelectorAll('#tab-picks input, #tab-picks select').forEach(el=>el.disabled=!picksOpen);
+  const sbtn=document.getElementById('sbtn');
+  if(sbtn) sbtn.disabled=!picksOpen;
+  refreshSubmitBtnText();
 }
 
 // ── TABS
@@ -788,12 +822,14 @@ function showTab(id,el){
   ['picks','mypicks','lb'].forEach(t=>document.getElementById('tab-'+t).style.display=t===id?'block':'none');
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
+  if(id==='picks') refreshPicksOpen();
   if(id==='lb') loadLeaderboard();
   if(id==='mypicks') renderMyPicks();
 }
 
 // ── PICK
 function pick(el,mid,val){
+  if(!picksOpen)return;
   picks[mid]=val;
   el.closest('.opts').querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));
   el.classList.add('on');
@@ -802,6 +838,7 @@ function pick(el,mid,val){
 }
 
 function scoreIn(mid){
+  if(!picksOpen)return;
   const h=document.getElementById(mid+'_h'),a=document.getElementById(mid+'_a');
   if(h.value!==''&&a.value!==''){picks[mid]=h.value+'-'+a.value;document.querySelector('[data-mid="'+mid+'"]').classList.add('picked');}
   else delete picks[mid];
@@ -809,6 +846,7 @@ function scoreIn(mid){
 }
 
 function selPick(mid,sel){
+  if(!picksOpen)return;
   if(sel.value){picks[mid]=sel.value;document.querySelector('[data-mid="'+mid+'"]').classList.add('picked');}
   else delete picks[mid];
   syncSummary();
@@ -824,6 +862,7 @@ function syncSummary(){
 }
 
 function randomAll(){
+  if(!picksOpen){toast(t('toast_picks_closed'));return;}
   Object.entries(RO).forEach(([mid,opts])=>{
     const v=rnd(opts);picks[mid]=v;
     const card=document.querySelector('[data-mid="'+mid+'"]');
@@ -847,6 +886,7 @@ function randomAll(){
 
 // ── SUBMIT
 async function doSubmit(){
+  if(!picksOpen){toast(t('toast_picks_closed'));return;}
   const btn=document.getElementById('sbtn');
   btn.disabled=true;btn.textContent='Saving...';
   try{
@@ -888,7 +928,7 @@ async function loadExistingPicks(){
     if(sel){sel.value=val;sel.dispatchEvent(new Event('change'));}
   });
   syncSummary();
-  document.getElementById('sbtn').textContent=t('submit_btn_update');
+  refreshSubmitBtnText();
 }
 
 // ── SCORING (handles multi-value results like Anytime scorer, e.g. "Messi,Kane")
