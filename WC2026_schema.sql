@@ -76,3 +76,11 @@ alter table pool_settings enable row level security;
 create policy "read_settings" on pool_settings for select to authenticated using (true);
 create policy "admin_update_settings" on pool_settings for update to authenticated
   using (exists (select 1 from pool_players where id = auth.uid() and is_admin = true));
+
+-- ── v4 — per-match open/close control (replaces the single picks_open switch) ──
+-- Lets the admin close picks for one match (e.g. 3rd Place, once it kicks off)
+-- while leaving another (e.g. the Final) open. Keys are the market_id prefix:
+-- 't3' = 3rd Place Match, 'fin' = World Cup Final, 't' = Tournament Awards.
+alter table pool_settings drop column if exists picks_open;
+alter table pool_settings add column if not exists group_open jsonb not null
+  default '{"t3":true,"fin":true,"t":true}'::jsonb;

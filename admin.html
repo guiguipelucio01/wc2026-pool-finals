@@ -28,9 +28,15 @@ h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4p
 .alert{background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);
   border-radius:var(--r);padding:12px 14px;font-size:12px;color:var(--orange);margin-bottom:20px}
 
-/* PICKS OPEN/CLOSE TOGGLE */
+/* PICKS OPEN/CLOSE TOGGLE (per match) */
+.picks-toggle-wrap{margin-bottom:20px}
+.ptw-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ptw-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ptw-actions{font-size:11px}
+.ptw-actions a{color:var(--muted);text-decoration:none;cursor:pointer}
+.ptw-actions a:hover{color:var(--text);text-decoration:underline}
 .picks-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  background:var(--s2);border:1px solid var(--greenbd);border-radius:var(--r);padding:14px 16px;margin-bottom:20px}
+  background:var(--s2);border:1px solid var(--greenbd);border-radius:var(--r);padding:12px 16px;margin-bottom:8px}
 .picks-toggle.closed{border-color:rgba(239,68,68,.3)}
 .pt-info{display:flex;align-items:center;gap:10px}
 .pt-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0}
@@ -163,15 +169,12 @@ h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4p
   <div class="subtitle">Enter match results here · Leaderboard updates automatically for everyone</div>
   <div class="alert">⚠️ Only accounts flagged as admin in Supabase can sign in here — this page is safe to deploy alongside the main app.</div>
 
-  <div class="picks-toggle" id="picks-toggle">
-    <div class="pt-info">
-      <div class="pt-dot" id="pt-dot"></div>
-      <div>
-        <div class="pt-title" id="pt-title">Picks are OPEN</div>
-        <div class="pt-sub">Players can submit or change their picks</div>
-      </div>
+  <div class="picks-toggle-wrap">
+    <div class="ptw-head">
+      <div class="ptw-title">Picks status — per match</div>
+      <div class="ptw-actions"><a href="#" onclick="setAllGroups(true);return false;">Open all</a> · <a href="#" onclick="setAllGroups(false);return false;">Close all</a></div>
     </div>
-    <button class="btn-pt" id="btn-pt" onclick="togglePicksOpen()">🔒 Close picks</button>
+    <div id="picks-toggle-rows"></div>
   </div>
 
   <div class="stats">
@@ -294,39 +297,66 @@ const MARKETS=[
 ];
 
 let existingResults={};
-let picksOpen=true;
+let groupOpen={t3:true,fin:true,t:true};
+const GROUPS=[
+  {key:'t3',label:'3rd Place Match'},
+  {key:'fin',label:'World Cup Final'},
+  {key:'t',label:'Tournament Awards'},
+];
 
 async function loadPicksOpen(){
-  const {data}=await db.from('pool_settings').select('picks_open').eq('id',true).maybeSingle();
-  picksOpen = data ? data.picks_open!==false : true;
+  const {data}=await db.from('pool_settings').select('group_open').eq('id',true).maybeSingle();
+  const g=(data&&data.group_open)||{};
+  groupOpen={t3:g.t3!==false,fin:g.fin!==false,t:g.t!==false};
   renderPicksToggle();
 }
 
 function renderPicksToggle(){
-  const wrap=document.getElementById('picks-toggle');
-  const title=document.getElementById('pt-title');
-  const btn=document.getElementById('btn-pt');
-  wrap.classList.toggle('closed', !picksOpen);
-  title.textContent = picksOpen ? 'Picks are OPEN' : 'Picks are CLOSED';
-  btn.textContent = picksOpen ? '🔒 Close picks' : '🔓 Open picks';
-  btn.className = 'btn-pt ' + (picksOpen ? 'close' : 'open');
+  document.getElementById('picks-toggle-rows').innerHTML=GROUPS.map(({key,label})=>{
+    const open=groupOpen[key];
+    return `<div class="picks-toggle${open?'':' closed'}" id="pt-${key}">
+      <div class="pt-info">
+        <div class="pt-dot"></div>
+        <div>
+          <div class="pt-title">${label} — ${open?'OPEN':'CLOSED'}</div>
+          <div class="pt-sub">Players can ${open?'submit or change':'no longer change'} picks for this match</div>
+        </div>
+      </div>
+      <button class="btn-pt ${open?'close':'open'}" onclick="toggleGroup('${key}')">${open?'🔒 Close':'🔓 Open'}</button>
+    </div>`;
+  }).join('');
 }
 
-async function togglePicksOpen(){
-  const btn=document.getElementById('btn-pt');
-  btn.disabled=true;
+async function saveGroupOpen(){
+  const {error}=await db.from('pool_settings')
+    .update({group_open:groupOpen,updated_at:new Date().toISOString()}).eq('id',true);
+  if(error)throw error;
+}
+
+async function toggleGroup(key){
+  const prev=groupOpen[key];
+  groupOpen[key]=!prev;
+  renderPicksToggle();
   try{
-    const newVal=!picksOpen;
-    const {error}=await db.from('pool_settings')
-      .update({picks_open:newVal,updated_at:new Date().toISOString()}).eq('id',true);
-    if(error)throw error;
-    picksOpen=newVal;
-    renderPicksToggle();
-    toast(picksOpen?'Picks are now open ✓':'Picks are now closed ✓');
+    await saveGroupOpen();
+    toast(groupOpen[key]?'Opened ✓':'Closed ✓');
   }catch(e){
+    groupOpen[key]=prev;renderPicksToggle();
     toast('Error updating picks status');console.error(e);
   }
-  btn.disabled=false;
+}
+
+async function setAllGroups(val){
+  const prev={...groupOpen};
+  GROUPS.forEach(({key})=>groupOpen[key]=val);
+  renderPicksToggle();
+  try{
+    await saveGroupOpen();
+    toast(val?'All matches opened ✓':'All matches closed ✓');
+  }catch(e){
+    groupOpen=prev;renderPicksToggle();
+    toast('Error updating picks status');console.error(e);
+  }
 }
 
 async function init(){

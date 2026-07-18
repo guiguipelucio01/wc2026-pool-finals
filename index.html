@@ -87,13 +87,16 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
 .sb-pill{background:var(--greenbg);border:1px solid var(--greenbd);color:var(--green);
   font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.04em}
 .sb-pill.closed{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red)}
+.sb-pill.partial{background:var(--goldbg);border-color:var(--goldbd);color:var(--gold)}
 .sb-text{font-size:12px;color:var(--muted);flex:1}
 .sb-count{font-size:12px;font-weight:600;color:var(--text)}
 
-/* PICKS LOCKED (admin closed submissions) */
-.page.picks-locked .opt,.page.picks-locked .psel-btn,.page.picks-locked .btn-rand{
-  pointer-events:none;opacity:.5}
-.page.picks-locked .score-box{opacity:.5}
+/* PICKS LOCKED (admin closed submissions) — locked per match, not the whole page */
+.mkt.locked .opt,.mkt.locked .psel-btn{pointer-events:none;opacity:.5}
+.mkt.locked .score-box{opacity:.5}
+.match-closed-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;
+  color:var(--red);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+  padding:3px 10px;border-radius:20px;margin-left:6px;letter-spacing:.04em}
 
 /* RAND BANNER */
 .rand-banner{background:linear-gradient(135deg,#0f1a0f,#0a1a08);border:1px solid var(--greenbd);
@@ -321,6 +324,7 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
   <!-- 3RD -->
   <div class="match-hdr" style="margin-top:26px">
     <div class="match-chip chip-3rd" data-i18n="match_3rd_chip">3rd Place · Jul 18</div>
+    <span class="match-closed-badge" id="badge-t3" style="display:none" data-i18n="group_closed_badge">🔒 Closed</span>
     <div class="match-title">🇫🇷 <span data-i18n="team_france">France</span> vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 <span data-i18n="team_england">England</span></div>
   </div>
   <div class="cat-label" data-i18n="cat_result">Match result</div>
@@ -343,6 +347,7 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
   <!-- FINAL -->
   <div class="match-hdr" style="margin-top:26px">
     <div class="match-chip chip-fin" data-i18n="match_fin_chip">🏆 World Cup Final · Jul 19</div>
+    <span class="match-closed-badge" id="badge-fin" style="display:none" data-i18n="group_closed_badge">🔒 Closed</span>
     <div class="match-title" style="color:var(--gold)">🇪🇸 <span data-i18n="team_spain">Spain</span> vs 🇦🇷 <span data-i18n="team_argentina">Argentina</span></div>
     <div class="match-sub" data-i18n="match_fin_sub">MetLife Stadium, New Jersey</div>
   </div>
@@ -366,6 +371,7 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
   <!-- TOURNAMENT -->
   <div class="match-hdr" style="margin-top:26px">
     <div class="match-chip chip-tou" data-i18n="match_awards_chip">Tournament Awards</div>
+    <span class="match-closed-badge" id="badge-t" style="display:none" data-i18n="group_closed_badge">🔒 Closed</span>
     <div class="match-title" data-i18n="match_awards_title">Individual Prizes</div>
   </div>
   <div class="mkt" data-mid="t_01"><div class="mkt-top"><div class="mkt-q" data-i18n="t_01_q">Who will be the World Cup champion?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="mkt-hint" data-i18n="t_01_hint">The team that lifts the trophy</div><div class="opts g2"><div class="opt" onclick="pick(this,'t_01','Spain')">🇪🇸 <span data-i18n="team_spain">Spain</span></div><div class="opt" onclick="pick(this,'t_01','Argentina')">🇦🇷 <span data-i18n="team_argentina">Argentina</span></div></div></div>
@@ -413,7 +419,12 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let currentPlayer = null;
 let hasSaved = false;
-let picksOpen = true;
+// groupOpen keys are the market_id prefix: t3 = 3rd Place, fin = Final, t = Awards
+let groupOpen = {t3:true, fin:true, t:true};
+function marketGroup(mid){ return mid.split('_')[0]; }
+function isGroupOpen(mid){ return groupOpen[marketGroup(mid)]!==false; }
+function allGroupsClosed(){ return Object.values(groupOpen).every(v=>v===false); }
+function allGroupsOpen(){ return Object.values(groupOpen).every(v=>v!==false); }
 let authMode = 'signup'; // 'signup' | 'signin'
 const picks = {};
 
@@ -451,7 +462,8 @@ const I18N = {
   en: {
     nav_hi:'Hi,', nav_signout:'Sign out',
     tab_picks:'Place Picks', tab_mypicks:'My Picks', tab_lb:'Leaderboard',
-    sb_open:'OPEN', sb_closed:'CLOSED', sb_picked:'picked',
+    sb_open:'OPEN', sb_closed:'CLOSED', sb_partial:'PARTIALLY OPEN', sb_picked:'picked',
+    group_closed_badge:'🔒 Closed',
     deadline:'⏰ Deadline: 30 min before 3rd Place Match kickoff',
     rand_strong:"Don't want to decide?", rand_text:'Randomize all 29 markets instantly.', rand_btn:'🎲 Random all',
     match_3rd_chip:'3rd Place · Jul 18',
@@ -507,7 +519,8 @@ const I18N = {
   pt: {
     nav_hi:'Olá,', nav_signout:'Sair',
     tab_picks:'Fazer Palpites', tab_mypicks:'Meus Palpites', tab_lb:'Classificação',
-    sb_open:'ABERTO', sb_closed:'FECHADO', sb_picked:'escolhidos',
+    sb_open:'ABERTO', sb_closed:'FECHADO', sb_partial:'PARCIALMENTE ABERTO', sb_picked:'escolhidos',
+    group_closed_badge:'🔒 Fechado',
     deadline:'⏰ Prazo: 30 min antes do jogo do 3º lugar',
     rand_strong:'Não quer decidir?', rand_text:'Sorteie todos os 29 mercados instantaneamente.', rand_btn:'🎲 Aleatório',
     match_3rd_chip:'3º Lugar · 18 Jul',
@@ -595,7 +608,7 @@ function applyLang(){
   refreshPlayerSelectPlaceholders();
   refreshSubmitBtnText();
   const pill=document.getElementById('sb-pill');
-  if(pill) pill.textContent=t(picksOpen?'sb_open':'sb_closed');
+  if(pill) pill.textContent=t('sb_'+(allGroupsOpen()?'open':allGroupsClosed()?'closed':'partial'));
   const mp=document.getElementById('tab-mypicks'), lbT=document.getElementById('tab-lb');
   if(mp && mp.style.display==='block') renderMyPicks();
   if(lbT && lbT.style.display==='block') loadLeaderboard();
@@ -791,29 +804,39 @@ function showApp(){
   refreshPicksOpen();
 }
 
-// ── PICKS OPEN/CLOSED (admin-controlled)
+// ── PICKS OPEN/CLOSED (admin-controlled, per match)
 async function refreshPicksOpen(){
-  const {data}=await db.from('pool_settings').select('picks_open').eq('id',true).maybeSingle();
-  picksOpen = data ? data.picks_open!==false : true;
+  const {data}=await db.from('pool_settings').select('group_open').eq('id',true).maybeSingle();
+  const g=(data&&data.group_open)||{};
+  groupOpen={t3:g.t3!==false, fin:g.fin!==false, t:g.t!==false};
   applyPicksLockUI();
 }
 
 function refreshSubmitBtnText(){
   const sbtn=document.getElementById('sbtn');
   if(!sbtn || sbtn.textContent==='Saving...')return;
-  sbtn.textContent = !picksOpen ? t('submit_btn_closed') : t(hasSaved?'submit_btn_update':'submit_btn');
+  sbtn.textContent = allGroupsClosed() ? t('submit_btn_closed') : t(hasSaved?'submit_btn_update':'submit_btn');
 }
 
 function applyPicksLockUI(){
   const pill=document.getElementById('sb-pill');
   if(pill){
-    pill.textContent=t(picksOpen?'sb_open':'sb_closed');
-    pill.classList.toggle('closed', !picksOpen);
+    const state = allGroupsOpen() ? 'open' : allGroupsClosed() ? 'closed' : 'partial';
+    pill.textContent=t('sb_'+state);
+    pill.classList.remove('closed','partial');
+    if(state!=='open') pill.classList.add(state);
   }
-  document.getElementById('tab-picks')?.classList.toggle('picks-locked', !picksOpen);
-  document.querySelectorAll('#tab-picks input, #tab-picks select').forEach(el=>el.disabled=!picksOpen);
+  Object.keys(groupOpen).forEach(key=>{
+    const badge=document.getElementById('badge-'+key);
+    if(badge) badge.style.display = groupOpen[key] ? 'none' : 'inline-flex';
+  });
+  document.querySelectorAll('#tab-picks .mkt[data-mid]').forEach(mktEl=>{
+    const open=isGroupOpen(mktEl.dataset.mid);
+    mktEl.classList.toggle('locked', !open);
+    mktEl.querySelectorAll('input, select').forEach(el=>el.disabled=!open);
+  });
   const sbtn=document.getElementById('sbtn');
-  if(sbtn) sbtn.disabled=!picksOpen;
+  if(sbtn) sbtn.disabled=allGroupsClosed();
   refreshSubmitBtnText();
 }
 
@@ -829,7 +852,7 @@ function showTab(id,el){
 
 // ── PICK
 function pick(el,mid,val){
-  if(!picksOpen)return;
+  if(!isGroupOpen(mid))return;
   picks[mid]=val;
   el.closest('.opts').querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));
   el.classList.add('on');
@@ -838,7 +861,7 @@ function pick(el,mid,val){
 }
 
 function scoreIn(mid){
-  if(!picksOpen)return;
+  if(!isGroupOpen(mid))return;
   const h=document.getElementById(mid+'_h'),a=document.getElementById(mid+'_a');
   if(h.value!==''&&a.value!==''){picks[mid]=h.value+'-'+a.value;document.querySelector('[data-mid="'+mid+'"]').classList.add('picked');}
   else delete picks[mid];
@@ -846,7 +869,7 @@ function scoreIn(mid){
 }
 
 function selPick(mid,sel){
-  if(!picksOpen)return;
+  if(!isGroupOpen(mid))return;
   if(sel.value){picks[mid]=sel.value;document.querySelector('[data-mid="'+mid+'"]').classList.add('picked');}
   else delete picks[mid];
   syncSummary();
@@ -862,8 +885,8 @@ function syncSummary(){
 }
 
 function randomAll(){
-  if(!picksOpen){toast(t('toast_picks_closed'));return;}
-  Object.entries(RO).forEach(([mid,opts])=>{
+  if(allGroupsClosed()){toast(t('toast_picks_closed'));return;}
+  Object.entries(RO).filter(([mid])=>isGroupOpen(mid)).forEach(([mid,opts])=>{
     const v=rnd(opts);picks[mid]=v;
     const card=document.querySelector('[data-mid="'+mid+'"]');
     if(!card)return;
@@ -886,12 +909,12 @@ function randomAll(){
 
 // ── SUBMIT
 async function doSubmit(){
-  if(!picksOpen){toast(t('toast_picks_closed'));return;}
+  if(allGroupsClosed()){toast(t('toast_picks_closed'));return;}
   const btn=document.getElementById('sbtn');
   btn.disabled=true;btn.textContent='Saving...';
   try{
-    // Auto-fill blanks with random before saving
-    Object.keys(RO).forEach(mid=>{if(!picks[mid])picks[mid]=rnd(RO[mid]);});
+    // Auto-fill blanks with random before saving — only for markets still open
+    Object.keys(RO).forEach(mid=>{if(!picks[mid]&&isGroupOpen(mid))picks[mid]=rnd(RO[mid]);});
     const rows=Object.entries(picks).map(([market_id,p])=>({user_id:currentUser.id,player_name:currentPlayer,market_id,pick:p}));
     const {error}=await db.from('pool_picks').upsert(rows,{onConflict:'user_id,market_id'});
     if(error)throw error;
@@ -946,7 +969,9 @@ function formatResult(res,market_id){
 async function renderMyPicks(){
   const body=document.getElementById('mypicks-body');
   body.innerHTML=`<div class="loading">${t('mypicks_loading')}</div>`;
-  const {data:pd}=await db.from('pool_picks').select('market_id,pick').eq('user_id',currentUser.id).order('market_id');
+  const {data:rawPd}=await db.from('pool_picks').select('market_id,pick').eq('user_id',currentUser.id).order('market_id');
+  // Ignore picks saved for markets that no longer exist in the current pool (e.g. SF2)
+  const pd=(rawPd||[]).filter(({market_id})=>market_id in PTS);
   const {data:rd}=await db.from('pool_results').select('market_id,result');
   const rm={};(rd||[]).forEach(r=>rm[r.market_id]=r.result);
   if(!pd||!pd.length){
