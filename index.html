@@ -316,10 +316,10 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
   <!-- 3RD -->
   <div class="match-hdr" style="margin-top:26px">
     <div class="match-chip chip-3rd" data-i18n="match_3rd_chip">3rd Place · Jul 18</div>
-    <div class="match-title">🇫🇷 <span data-i18n="team_france">France</span> vs 🇦🇷 <span data-i18n="team_argentina">Argentina</span></div>
+    <div class="match-title">🇫🇷 <span data-i18n="team_france">France</span> vs 🏴󠁧󠁢󠁥󠁮󠁧󠁿 <span data-i18n="team_england">England</span></div>
   </div>
   <div class="cat-label" data-i18n="cat_result">Match result</div>
-  <div class="mkt" data-mid="t3_01"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_01_q">Who wins the 3rd place match?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_01','France wins')">🇫🇷 <span data-i18n="team_france">France</span></div><div class="opt" onclick="pick(this,'t3_01','Argentina wins')">🇦🇷 <span data-i18n="team_argentina">Argentina</span></div></div></div>
+  <div class="mkt" data-mid="t3_01"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_01_q">Who wins the 3rd place match?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_01','France wins')">🇫🇷 <span data-i18n="team_france">France</span></div><div class="opt" onclick="pick(this,'t3_01','England wins')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 <span data-i18n="team_england">England</span></div></div></div>
   <div class="mkt" data-mid="t3_02"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_02_q">Exact score after 90 min?</div><div class="mkt-pts pts-hi">10 pts</div></div><div class="score-wrap"><input type="number" min="0" max="9" placeholder="0" id="t3_02_h" class="score-box" oninput="scoreIn('t3_02')"><div class="score-sep">—</div><input type="number" min="0" max="9" placeholder="0" id="t3_02_a" class="score-box" oninput="scoreIn('t3_02')"></div></div>
   <div class="mkt" data-mid="t3_03"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_03_q">Will it go to extra time?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_03','Yes')" data-i18n="opt_yes">Yes</div><div class="opt" onclick="pick(this,'t3_03','No')" data-i18n="opt_no">No</div></div></div>
   <div class="mkt" data-mid="t3_04"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_04_q">Decided by penalties?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_04','Yes')" data-i18n="opt_yes">Yes</div><div class="opt" onclick="pick(this,'t3_04','No')" data-i18n="opt_no">No</div></div></div>
@@ -331,8 +331,8 @@ nav{height:52px;background:var(--s1);border-bottom:1px solid var(--border);
   <div class="mkt" data-mid="t3_08"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_08_q">Half-time score?</div><div class="mkt-pts pts-med">4 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'t3_08','0-0')">0-0</div><div class="opt" onclick="pick(this,'t3_08','1-0')">1-0</div><div class="opt" onclick="pick(this,'t3_08','0-1')">0-1</div><div class="opt" onclick="pick(this,'t3_08','1-1')">1-1</div><div class="opt" onclick="pick(this,'t3_08','2-0')">2-0</div><div class="opt" onclick="pick(this,'t3_08','0-2')">0-2</div><div class="opt" onclick="pick(this,'t3_08','Other')" data-i18n="opt_other">Other</div></div></div>
   <div class="mkt" data-mid="t3_09"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_09_q">Which half more goals?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g3"><div class="opt" onclick="pick(this,'t3_09','1st')" data-i18n="opt_1st">1st half</div><div class="opt" onclick="pick(this,'t3_09','Equal')" data-i18n="opt_equal">Equal</div><div class="opt" onclick="pick(this,'t3_09','2nd')" data-i18n="opt_2nd">2nd half</div></div></div>
   <div class="cat-label" data-i18n="cat_players">Players</div>
-  <div class="mkt" data-mid="t3_10"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_10_q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_10" onchange="selPick('t3_10',this)"><option value="" data-i18n="pick_player">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option><option value="Other" data-i18n="opt_other">Other</option></select></div></div>
-  <div class="mkt" data-mid="t3_11"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_11_q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_11" onchange="selPick('t3_11',this)"><option value="" data-i18n="pick_player">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Messi</option><option>J.Álvarez</option><option>Lautaro Martínez</option><option>Mac Allister</option><option>E.Fernández</option><option>De Paul</option><option>Romero</option><option>L.Martínez</option><option>Molina</option><option>Dibu Martínez</option><option>Tagliafico</option><option value="Other" data-i18n="opt_other">Other</option></select></div></div>
+  <div class="mkt" data-mid="t3_10"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_10_q">First goal scorer?</div><div class="mkt-pts pts-hi">5 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_10" onchange="selPick('t3_10',this)"><option value="" data-i18n="pick_player">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option><option value="Other" data-i18n="opt_other">Other</option></select></div></div>
+  <div class="mkt" data-mid="t3_11"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_11_q">Anytime goal scorer?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="sel-wrap"><select class="sel-inp" id="sel-t3_11" onchange="selPick('t3_11',this)"><option value="" data-i18n="pick_player">Pick a player...</option><option>Mbappé</option><option>Dembélé</option><option>Olise</option><option>Barcola</option><option>Doué</option><option>Tchouaméni</option><option>Kanté</option><option>Zaïre-Emery</option><option>Saliba</option><option>Upamecano</option><option>Maignan</option><option>Bellingham</option><option>Kane</option><option>Saka</option><option>Foden</option><option>Rice</option><option>Madueke</option><option>Mainoo</option><option>Guehi</option><option>Stones</option><option>Pickford</option><option>Nico O'Reilly</option><option value="Other" data-i18n="opt_other">Other</option></select></div></div>
   <div class="mkt" data-mid="t3_12"><div class="mkt-top"><div class="mkt-q" data-i18n="t3_12_q">Red card shown?</div><div class="mkt-pts pts-med">3 pts</div></div><div class="opts g2"><div class="opt" onclick="pick(this,'t3_12','Yes')" data-i18n="opt_yes">Yes</div><div class="opt" onclick="pick(this,'t3_12','No')" data-i18n="opt_no">No</div></div></div>
 
   <!-- FINAL -->
@@ -453,7 +453,7 @@ const I18N = {
     match_awards_chip:'Tournament Awards', match_awards_title:'Individual Prizes',
     cat_result:'Match result', cat_goals:'Goals', cat_half:'First half', cat_players:'Players',
     pick_player:'Pick a player...',
-    team_france:'France', team_spain:'Spain', team_argentina:'Argentina',
+    team_france:'France', team_spain:'Spain', team_argentina:'Argentina', team_england:'England',
     opt_yes:'Yes', opt_no:'No', opt_other:'Other', opt_1st:'1st half', opt_equal:'Equal', opt_2nd:'2nd half',
     t3_01_q:'Who wins the 3rd place match?', t3_02_q:'Exact score after 90 min?', t3_03_q:'Will it go to extra time?',
     t3_04_q:'Decided by penalties?', t3_05_q:'3 or more goals?', t3_06_q:'Both teams score?',
@@ -509,7 +509,7 @@ const I18N = {
     match_awards_chip:'Prêmios do Torneio', match_awards_title:'Prêmios Individuais',
     cat_result:'Resultado da partida', cat_goals:'Gols', cat_half:'Primeiro tempo', cat_players:'Jogadores',
     pick_player:'Escolha um jogador...',
-    team_france:'França', team_spain:'Espanha', team_argentina:'Argentina',
+    team_france:'França', team_spain:'Espanha', team_argentina:'Argentina', team_england:'Inglaterra',
     opt_yes:'Sim', opt_no:'Não', opt_other:'Outro', opt_1st:'1º tempo', opt_equal:'Igual', opt_2nd:'2º tempo',
     t3_01_q:'Quem vence o jogo do 3º lugar?', t3_02_q:'Placar exato após 90 min?', t3_03_q:'Vai para a prorrogação?',
     t3_04_q:'Decidido nos pênaltis?', t3_05_q:'3 gols ou mais?', t3_06_q:'Ambos os times marcam?',
@@ -600,11 +600,11 @@ function setLang(l){
 }
 
 const RO = {
-  t3_01:['France wins','Argentina wins'],t3_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
+  t3_01:['France wins','England wins'],t3_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
   t3_03:['Yes','No'],t3_04:['Yes','No'],t3_05:['Yes','No'],t3_06:['Yes','No'],t3_07:['Yes','No'],
   t3_08:['0-0','1-0','0-1','1-1'],t3_09:['1st','Equal','2nd'],
-  t3_10:['Mbappé','Dembélé','Messi','Olise','Lautaro Martínez'],
-  t3_11:['Mbappé','Messi','Dembélé','Lautaro Martínez'],t3_12:['Yes','No'],
+  t3_10:['Mbappé','Dembélé','Bellingham','Kane','Olise'],
+  t3_11:['Mbappé','Bellingham','Kane','Dembélé'],t3_12:['Yes','No'],
   fin_01:['Spain wins','Argentina wins'],fin_02:['1-0','0-1','1-1','2-0','0-2','0-0'],
   fin_03:['Yes','No'],fin_04:['Yes','No'],fin_05:['Yes','No'],fin_06:['Yes','No'],fin_07:['Yes','No'],fin_08:['Yes','No'],
   fin_09:['0-0','1-0','0-1','1-1'],fin_10:['1st','Equal','2nd'],
