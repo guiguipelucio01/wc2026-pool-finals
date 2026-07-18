@@ -869,7 +869,8 @@ async function loadExistingPicks(){
   const {data}=await db.from('pool_picks').select('market_id,pick').eq('user_id',currentUser.id);
   if(!data||!data.length)return;
   hasSaved=true;
-  data.forEach(({market_id,pick:val})=>{
+  // Ignore picks saved for markets that no longer exist in the current pool (e.g. SF2)
+  data.filter(({market_id})=>market_id in PTS).forEach(({market_id,pick:val})=>{
     picks[market_id]=val;
     const card=document.querySelector('[data-mid="'+market_id+'"]');
     if(!card)return;
